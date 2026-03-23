@@ -22,18 +22,23 @@ class PassThroughCleaner:
     def clean(self, transcript: str) -> str:
         return transcript
 
+    def get_metadata(self) -> dict[str, object]:
+        return {}
+
 
 @dataclass(slots=True)
 class OpenAICompatibleCleaner:
     config: CleanupConfig
     transport: HttpTransport
     name: str = "cleanup"
+    last_metadata: dict[str, object] | None = None
 
     @classmethod
     def from_config(cls, config: CleanupConfig) -> "OpenAICompatibleCleaner":
         return cls(config=config, transport=UrllibTransport())
 
     def clean(self, transcript: str) -> str:
+        self.last_metadata = None
         if not transcript.strip():
             return transcript
         system_prompt = _read_prompt_file(self.config.system_prompt_path)
@@ -55,13 +60,27 @@ class OpenAICompatibleCleaner:
         text = _extract_message_text(response).strip()
         if not text:
             raise CleanupFailure(self.name, "cleanup returned empty text")
+        self.last_metadata = _extract_cleanup_metadata(response)
         return text
+
+    def get_metadata(self) -> dict[str, object]:
+        return dict(self.last_metadata or {})
 
 
 def build_cleaner(config: CleanupConfig | None) -> TextCleaner:
     if config is None or not config.enabled:
         return PassThroughCleaner()
     return OpenAICompatibleCleaner.from_config(config)
+
+
+def get_cleaner_metadata(cleaner: TextCleaner) -> dict[str, object]:
+    getter = getattr(cleaner, "get_metadata", None)
+    if not callable(getter):
+        return {}
+    metadata = getter()
+    if not isinstance(metadata, dict):
+        return {}
+    return metadata
 
 
 def _build_chat_completions_url(base_url: str) -> str:
@@ -80,6 +99,20 @@ def _extract_message_text(response: dict) -> str:
             if joined:
                 return joined
     return ""
+
+
+def _extract_cleanup_metadata(response: dict) -> dict[str, object]:
+    usage = response.get("usage")
+    if not isinstance(usage, dict):
+        return {}
+    normalized_usage = {}
+    for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+        value = usage.get(key)
+        if isinstance(value, int):
+            normalized_usage[key] = value
+    if not normalized_usage:
+        return {}
+    return {"cleanup_usage": normalized_usage}
 
 
 def _render_user_prompt(config: CleanupConfig, transcript: str) -> str:

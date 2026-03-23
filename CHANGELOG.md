@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- added SQLite-backed session history persistence and a CLI viewer for completed sessions
+- added `dictionary.txt`, `system_prompt.txt`, and `user_prompt.txt` defaults with a cleaner separation between policy and per-session structure
+- added configurable history database paths and aligned cleanup prompt history reads with persisted session history
+- added cleanup token-usage capture when OpenAI-compatible responses return `usage`
+
 ## 0.1.0 - 2026-03-23
 
 Initial alpha release.

@@ -23,6 +23,7 @@ class ParseConfigTests(unittest.TestCase):
         self.assertEqual(config.provider.name, "openai")
         self.assertEqual(config.audio.sample_rate, 8000)
         self.assertEqual(config.hotkey.modifiers, ("Control", "Shift"))
+        self.assertEqual(config.history.path, Path.home() / ".config" / "ibus-voice" / "history.db")
         self.assertIsNone(config.cleanup)
 
     def test_missing_provider_fields_fail(self) -> None:
@@ -45,6 +46,9 @@ class ParseConfigTests(unittest.TestCase):
                     "system_prompt_path": "prompts/system.txt",
                     "user_prompt_path": "prompts/user.txt",
                 },
+                "history": {
+                    "path": "state/history.db",
+                },
             },
             base_dir=Path("/tmp/ibus-voice-config"),
         )
@@ -60,8 +64,12 @@ class ParseConfigTests(unittest.TestCase):
             Path("/tmp/ibus-voice-config/dictionary.txt").resolve(),
         )
         self.assertEqual(
+            config.history.path,
+            Path("/tmp/ibus-voice-config/state/history.db").resolve(),
+        )
+        self.assertEqual(
             config.cleanup.history_path,
-            Path("/tmp/ibus-voice-config/history.db").resolve(),
+            Path("/tmp/ibus-voice-config/state/history.db").resolve(),
         )
         self.assertEqual(
             config.cleanup.system_prompt_path,
@@ -84,3 +92,29 @@ class ParseConfigTests(unittest.TestCase):
                     "cleanup": {"enabled": True, "base_url": "https://api.openai.com/v1"},
                 }
             )
+
+    def test_cleanup_history_path_defaults_to_top_level_history_path(self) -> None:
+        config = parse_config(
+            {
+                "provider": {
+                    "name": "openai",
+                    "api_key": "secret",
+                    "model": "gpt-4o-transcribe",
+                },
+                "history": {
+                    "path": "custom-history.db",
+                },
+                "cleanup": {
+                    "enabled": True,
+                    "base_url": "https://api.openai.com/v1",
+                    "api_key": "cleanup-secret",
+                    "model": "gpt-4o-mini",
+                },
+            },
+            base_dir=Path("/tmp/ibus-voice-config"),
+        )
+
+        self.assertEqual(
+            config.cleanup.history_path,
+            Path("/tmp/ibus-voice-config/custom-history.db").resolve(),
+        )

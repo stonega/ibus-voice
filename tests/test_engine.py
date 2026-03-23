@@ -30,9 +30,15 @@ class StubProvider:
 
 
 class StubCleaner:
-    def __init__(self, text: str | None = None, failure: Exception | None = None) -> None:
+    def __init__(
+        self,
+        text: str | None = None,
+        failure: Exception | None = None,
+        metadata: dict[str, object] | None = None,
+    ) -> None:
         self.text = text
         self.failure = failure
+        self.metadata = metadata or {}
 
     def clean(self, transcript: str) -> str:
         if self.failure is not None:
@@ -40,6 +46,9 @@ class StubCleaner:
         if self.text is None:
             return transcript
         return self.text
+
+    def get_metadata(self) -> dict[str, object]:
+        return dict(self.metadata)
 
 
 class StubHistory:
@@ -114,7 +123,10 @@ class VoiceEngineTests(unittest.TestCase):
             recorder=MemoryRecorder(),
             provider=StubProvider(TranscriptResult(text="hello world", provider="stub")),
             committer=StubCommitter(),
-            cleaner=StubCleaner(text="Hello world."),
+            cleaner=StubCleaner(
+                text="Hello world.",
+                metadata={"cleanup_usage": {"prompt_tokens": 7, "completion_tokens": 3, "total_tokens": 10}},
+            ),
         )
 
         engine.handle_press()
@@ -125,6 +137,10 @@ class VoiceEngineTests(unittest.TestCase):
         self.assertEqual(engine.last_raw_text, "hello world")
         self.assertEqual(engine.last_result.text, "Hello world.")
         self.assertEqual(engine.last_result.metadata["raw_text"], "hello world")
+        self.assertEqual(
+            engine.last_result.metadata["cleanup_usage"],
+            {"prompt_tokens": 7, "completion_tokens": 3, "total_tokens": 10},
+        )
 
     def test_cleanup_failure_falls_back_to_raw_text(self) -> None:
         engine = VoiceEngine(

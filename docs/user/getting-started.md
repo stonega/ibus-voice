@@ -36,6 +36,7 @@ Useful commands:
 ```bash
 PYTHONPATH=src python3 -m ibus_voice.cli --xml
 PYTHONPATH=src python3 -m ibus_voice.cli --config examples/config.toml --check
+PYTHONPATH=src python3 -m ibus_voice.cli --history
 ```
 
 Package builds:

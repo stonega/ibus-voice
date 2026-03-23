@@ -160,3 +160,35 @@ class CleanupTests(unittest.TestCase):
         self.assertIn("IBus\nOpenAI", content)
         self.assertIn("openai: older text", content)
         self.assertTrue(content.endswith("---\nlatest text"))
+
+    def test_openai_cleaner_extracts_usage_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            system_prompt = base / "system.txt"
+            user_prompt = base / "user.txt"
+            system_prompt.write_text("Fix text.", encoding="utf-8")
+            user_prompt.write_text("{transcript}", encoding="utf-8")
+            cleaner = OpenAICompatibleCleaner(
+                config=CleanupConfig(
+                    enabled=True,
+                    base_url="https://api.openai.com/v1",
+                    api_key="secret",
+                    model="gpt-4o-mini",
+                    history_path=base / "history.db",
+                    system_prompt_path=system_prompt,
+                    user_prompt_path=user_prompt,
+                ),
+                transport=FakeTransport(
+                    {
+                        "choices": [{"message": {"content": " clean "}}],
+                        "usage": {"prompt_tokens": 10, "completion_tokens": 4, "total_tokens": 14},
+                    }
+                ),
+            )
+
+            cleaner.clean("hello world")
+
+        self.assertEqual(
+            cleaner.get_metadata(),
+            {"cleanup_usage": {"prompt_tokens": 10, "completion_tokens": 4, "total_tokens": 14}},
+        )

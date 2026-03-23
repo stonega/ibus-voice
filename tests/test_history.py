@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ibus_voice.history import SQLiteSessionHistory
+from ibus_voice.history import SQLiteSessionHistory, format_completed_sessions
 from ibus_voice.types import TranscriptResult
 
 
@@ -45,3 +45,60 @@ class SQLiteSessionHistoryTests(unittest.TestCase):
             json.loads(row[5]),
             {"language": "en", "raw_text": "hello world"},
         )
+
+    def test_list_completed_sessions_returns_newest_first(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            history_path = Path(temp_dir) / "history.db"
+            history = SQLiteSessionHistory(history_path)
+
+            history.save_completed_session(
+                TranscriptResult(text="first", provider="openai"),
+                raw_text="first",
+                warning=None,
+            )
+            history.save_completed_session(
+                TranscriptResult(text="second", provider="gemini"),
+                raw_text="second",
+                warning="cleanup: timeout",
+            )
+
+            sessions = history.list_completed_sessions(limit=10)
+
+        self.assertEqual([session.final_text for session in sessions], ["second", "first"])
+        self.assertEqual(sessions[0].warning, "cleanup: timeout")
+
+    def test_format_completed_sessions_renders_human_readable_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            history_path = Path(temp_dir) / "history.db"
+            history = SQLiteSessionHistory(history_path)
+            history.save_completed_session(
+                TranscriptResult(text="Hello world.", provider="openai", latency_ms=1200),
+                raw_text="hello world",
+                warning="cleanup: timeout",
+            )
+
+            rendered = format_completed_sessions(history.list_completed_sessions(limit=10))
+
+        self.assertIn("provider: openai", rendered)
+        self.assertIn("final: Hello world.", rendered)
+        self.assertIn("raw: hello world", rendered)
+        self.assertIn("latency_ms: 1200", rendered)
+        self.assertIn("warning: cleanup: timeout", rendered)
+
+    def test_format_completed_sessions_renders_cleanup_usage(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            history_path = Path(temp_dir) / "history.db"
+            history = SQLiteSessionHistory(history_path)
+            history.save_completed_session(
+                TranscriptResult(
+                    text="Hello world.",
+                    provider="openai",
+                    metadata={"cleanup_usage": {"prompt_tokens": 10, "completion_tokens": 4, "total_tokens": 14}},
+                ),
+                raw_text="hello world",
+                warning=None,
+            )
+
+            rendered = format_completed_sessions(history.list_completed_sessions(limit=10))
+
+        self.assertIn("cleanup_usage: prompt=10 completion=4 total=14", rendered)

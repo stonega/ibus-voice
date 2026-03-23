@@ -49,10 +49,16 @@ class CleanupConfig:
 
 
 @dataclass(slots=True)
+class HistoryConfig:
+    path: Path = DEFAULT_CONFIG_DIR / "history.db"
+
+
+@dataclass(slots=True)
 class AppConfig:
     provider: ProviderConfig
     audio: AudioConfig
     hotkey: HotkeyConfig
+    history: HistoryConfig
     cleanup: CleanupConfig | None = None
 
 
@@ -61,6 +67,13 @@ def load_config(path: str | os.PathLike[str] | None = None) -> AppConfig:
     with config_path.open("rb") as handle:
         raw = tomllib.load(handle)
     return parse_config(raw, base_dir=config_path.expanduser().resolve().parent)
+
+
+def load_history_path(path: str | os.PathLike[str] | None = None) -> Path:
+    config_path = Path(path) if path else DEFAULT_CONFIG_PATH
+    with config_path.open("rb") as handle:
+        raw = tomllib.load(handle)
+    return _parse_history_config(raw.get("history"), base_dir=config_path.expanduser().resolve().parent).path
 
 
 def parse_config(raw: dict, *, base_dir: Path | None = None) -> AppConfig:
@@ -92,15 +105,29 @@ def parse_config(raw: dict, *, base_dir: Path | None = None) -> AppConfig:
     modifiers = hotkey_section.get("modifiers", ["Control"])
     if isinstance(modifiers, str):
         modifiers = [modifiers]
+    history = _parse_history_config(raw.get("history"), base_dir=base_dir or DEFAULT_CONFIG_DIR)
     hotkey = HotkeyConfig(
         key=str(hotkey_section.get("key", "space")),
         modifiers=tuple(str(item) for item in modifiers),
     )
-    cleanup = _parse_cleanup_config(raw.get("cleanup"), base_dir=base_dir or DEFAULT_CONFIG_DIR)
-    return AppConfig(provider=provider, audio=audio, hotkey=hotkey, cleanup=cleanup)
+    cleanup = _parse_cleanup_config(
+        raw.get("cleanup"),
+        base_dir=base_dir or DEFAULT_CONFIG_DIR,
+        default_history_path=history.path,
+    )
+    return AppConfig(provider=provider, audio=audio, hotkey=hotkey, history=history, cleanup=cleanup)
+
+def _parse_history_config(raw: object, *, base_dir: Path) -> HistoryConfig:
+    if raw is None:
+        return HistoryConfig(path=(base_dir / "history.db").resolve())
+    if not isinstance(raw, dict):
+        raise ValueError("history section must be a table")
+    return HistoryConfig(
+        path=_resolve_optional_path(raw.get("path", "history.db"), base_dir) or (base_dir / "history.db").resolve()
+    )
 
 
-def _parse_cleanup_config(raw: object, *, base_dir: Path) -> CleanupConfig | None:
+def _parse_cleanup_config(raw: object, *, base_dir: Path, default_history_path: Path) -> CleanupConfig | None:
     if raw is None:
         return None
     if not isinstance(raw, dict):
@@ -120,7 +147,7 @@ def _parse_cleanup_config(raw: object, *, base_dir: Path) -> CleanupConfig | Non
         model=model,
         timeout_seconds=float(raw.get("timeout_seconds", 8.0)),
         dictionary_path=_resolve_optional_path(raw.get("dictionary_path", "dictionary.txt"), base_dir),
-        history_path=_resolve_optional_path(raw.get("history_path", "history.db"), base_dir),
+        history_path=_resolve_optional_path(raw.get("history_path"), base_dir) or default_history_path,
         system_prompt_path=_resolve_optional_path(raw.get("system_prompt_path", "system_prompt.txt"), base_dir),
         user_prompt_path=_resolve_optional_path(raw.get("user_prompt_path", "user_prompt.txt"), base_dir),
     )

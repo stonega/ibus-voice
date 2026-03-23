@@ -5,6 +5,9 @@ model = "gpt-4o-transcribe"
 timeout_seconds = 30
 dictionary_path = "dictionary.txt"
 
+[history]
+path = "history.db"
+
 [cleanup]
 enabled = false
 base_url = "https://api.openai.com/v1"
@@ -12,7 +15,6 @@ api_key = "replace-me"
 model = "gpt-4o-mini"
 timeout_seconds = 8
 dictionary_path = "dictionary.txt"
-history_path = "history.db"
 system_prompt_path = "system_prompt.txt"
 user_prompt_path = "user_prompt.txt"
 

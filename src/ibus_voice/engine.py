@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from ibus_voice.audio import AudioPayload, Recorder
+from ibus_voice.cleanup import get_cleaner_metadata
 from ibus_voice.history import SessionHistory
 from ibus_voice.types import CleanupFailure, ProviderFailure, TranscriptResult
 
@@ -64,8 +65,10 @@ class VoiceEngine:
         if result.text.strip():
             self.last_raw_text = result.text
             final_text = result.text
+            cleanup_metadata: dict[str, object] = {}
             try:
                 final_text = self.cleaner.clean(result.text)
+                cleanup_metadata = get_cleaner_metadata(self.cleaner)
             except CleanupFailure as exc:
                 self.last_warning = str(exc)
                 self.events.append("cleanup_failed_fallback")
@@ -74,7 +77,7 @@ class VoiceEngine:
                 text=final_text,
                 provider=result.provider,
                 latency_ms=result.latency_ms,
-                metadata={**result.metadata, "raw_text": result.text},
+                metadata={**result.metadata, **cleanup_metadata, "raw_text": result.text},
             )
             self._save_history(self.last_result, raw_text=result.text)
             self.events.append("text_committed")

@@ -23,7 +23,8 @@
 - cleanup templates can use transcript text, recent session history, and dictionary content
 - cleanup failures fall back to the raw transcript
 - only final text is committed
-- successful committed sessions are appended to `~/.config/ibus-voice/history.db`
+- successful committed sessions are appended to the configured history database path
+- cleanup token usage is persisted in session metadata when the cleanup response includes `usage`
 - OpenAI receives multipart file uploads
 - Gemini receives inline audio data through `generateContent`
 

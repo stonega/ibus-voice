@@ -128,6 +128,14 @@ Print IBus engine metadata XML with:
 PYTHONPATH=src python3 -m ibus_voice.cli --xml
 ```
 
+Show recent completed dictation history with:
+
+```bash
+PYTHONPATH=src python3 -m ibus_voice.cli --history
+PYTHONPATH=src python3 -m ibus_voice.cli --history --history-limit 50
+PYTHONPATH=src python3 -m ibus_voice.cli --history --config ~/.config/ibus-voice/config.toml
+```
+
 Install a local development copy with:
 
 ```bash
