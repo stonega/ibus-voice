@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from xml.sax.saxutils import escape
 
+from ibus_voice import __version__
+
 
 PACKAGE_NAME = "ibus-voice"
 COMPONENT_NAME = "org.freedesktop.IBus.ibus_voice"
-VERSION = "0.1.0"
+VERSION = __version__
 AUTHOR = "ibus-voice contributors"
 HOMEPAGE = "https://github.com/stonega/ibus-voice"
 LICENSE = "MIT"
@@ -20,7 +22,7 @@ TEXTDOMAIN = "ibus-voice"
 
 
 def render_engines_xml() -> str:
-    return """<?xml version="1.0" encoding="utf-8"?>
+    return f"""<?xml version="1.0" encoding="utf-8"?>
 <engines>
   <engine>
     <name>ibus-voice</name>
@@ -35,7 +37,7 @@ def render_engines_xml() -> str:
     <description>Voice input for IBus</description>
     <rank>0</rank>
     <symbol>V</symbol>
-    <version>0.1.0</version>
+    <version>{VERSION}</version>
     <textdomain>ibus-voice</textdomain>
   </engine>
 </engines>

@@ -101,6 +101,15 @@ Install a local development copy with:
 ./scripts/install-local.sh
 ```
 
+Build Linux packages locally with:
+
+```bash
+./scripts/build-deb.sh
+./scripts/build-rpm.sh
+```
+
+Artifacts are written to `.dist/packages/`. GitHub Actions also builds and uploads these package artifacts on pushes, pull requests, tags, and manual runs.
+
 For GNOME or standard desktop integration, prefer the system installer because IBus reads component XML from `/usr/share/ibus/component` by default:
 
 ```bash

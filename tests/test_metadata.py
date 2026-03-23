@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 
+from ibus_voice import __version__
 from ibus_voice.metadata import render_component_xml, render_engines_xml
 
 
@@ -17,3 +18,8 @@ class MetadataTests(unittest.TestCase):
 
         self.assertIn("<exec>/home/test/.local/bin/ibus-engine-voice --ibus</exec>", rendered)
         self.assertIn("engines exec='/home/test/.local/bin/ibus-engine-voice --xml'", rendered)
+
+    def test_rendered_xml_uses_package_version(self) -> None:
+        rendered = render_engines_xml()
+
+        self.assertIn(f"<version>{__version__}</version>", rendered)

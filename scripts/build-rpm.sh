@@ -2,31 +2,99 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SPEC_DIR="${ROOT_DIR}/.dist/rpm"
+VERSION="$(
+  cd "${ROOT_DIR}"
+  python3 - <<'PY'
+import tomllib
+from pathlib import Path
 
-echo "Preparing RPM spec in ${SPEC_DIR}"
-rm -rf "${SPEC_DIR}"
-mkdir -p "${SPEC_DIR}"
+data = tomllib.loads(Path("pyproject.toml").read_text())
+print(data["project"]["version"])
+PY
+)"
+RPM_ROOT="${ROOT_DIR}/.dist/rpm"
+PACKAGE_DIR="${ROOT_DIR}/.dist/packages"
+SOURCE_DIR="${RPM_ROOT}/SOURCES/ibus-voice-${VERSION}"
+SPEC_PATH="${RPM_ROOT}/SPECS/ibus-voice.spec"
+TMP_DIR="${RPM_ROOT}/tmp"
 
-cat > "${SPEC_DIR}/ibus-voice.spec" <<EOF
+echo "Building RPM package for version ${VERSION}"
+rm -rf "${RPM_ROOT}"
+mkdir -p \
+  "${RPM_ROOT}/BUILD" \
+  "${RPM_ROOT}/BUILDROOT" \
+  "${RPM_ROOT}/RPMS" \
+  "${RPM_ROOT}/SOURCES" \
+  "${RPM_ROOT}/SPECS" \
+  "${RPM_ROOT}/SRPMS" \
+  "${TMP_DIR}" \
+  "${PACKAGE_DIR}" \
+  "${SOURCE_DIR}/examples"
+
+cp -R "${ROOT_DIR}/src" "${SOURCE_DIR}/src"
+cp "${ROOT_DIR}/README.md" "${SOURCE_DIR}/README.md"
+cp "${ROOT_DIR}/LICENSE" "${SOURCE_DIR}/LICENSE"
+cp "${ROOT_DIR}/examples/config.toml" "${SOURCE_DIR}/examples/config.toml"
+
+cat > "${SOURCE_DIR}/ibus-engine-voice" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+export PYTHONPATH="/usr/lib/ibus-voice/src${PYTHONPATH:+:$PYTHONPATH}"
+exec /usr/bin/python3 -m ibus_voice.cli "$@"
+EOF
+chmod 0755 "${SOURCE_DIR}/ibus-engine-voice"
+
+PYTHONPATH="${ROOT_DIR}/src" /usr/bin/python3 - <<'PY' > "${SOURCE_DIR}/ibus-voice.xml"
+from ibus_voice.metadata import render_component_xml
+
+print(render_component_xml("/usr/bin/ibus-engine-voice"), end="")
+PY
+
+tar -C "${RPM_ROOT}/SOURCES" -czf "${RPM_ROOT}/SOURCES/ibus-voice-${VERSION}.tar.gz" "ibus-voice-${VERSION}"
+
+cat > "${SPEC_PATH}" <<EOF
 Name: ibus-voice
-Version: 0.1.0
+Version: ${VERSION}
 Release: 1%{?dist}
 Summary: Voice input support for IBus on Linux
 License: MIT
 BuildArch: noarch
+Source0: %{name}-%{version}.tar.gz
+Requires: ibus, python3
 
 %description
 Voice input support for IBus on Linux.
 
+%prep
+%setup -q
+
 %install
 mkdir -p %{buildroot}/usr/lib/ibus-voice
-cp -r ${ROOT_DIR}/src %{buildroot}/usr/lib/ibus-voice/
-cp ${ROOT_DIR}/README.md %{buildroot}/usr/lib/ibus-voice/
-cp ${ROOT_DIR}/LICENSE %{buildroot}/usr/lib/ibus-voice/
+mkdir -p %{buildroot}/usr/bin
+mkdir -p %{buildroot}/usr/share/ibus/component
+mkdir -p %{buildroot}/usr/share/doc/%{name}/examples
+cp -r src %{buildroot}/usr/lib/ibus-voice/
+cp README.md %{buildroot}/usr/lib/ibus-voice/
+cp LICENSE %{buildroot}/usr/lib/ibus-voice/
+cp ibus-engine-voice %{buildroot}/usr/bin/ibus-engine-voice
+cp ibus-voice.xml %{buildroot}/usr/share/ibus/component/ibus-voice.xml
+cp examples/config.toml %{buildroot}/usr/share/doc/%{name}/examples/config.toml
 
 %files
 /usr/lib/ibus-voice
+/usr/bin/ibus-engine-voice
+/usr/share/ibus/component/ibus-voice.xml
+/usr/share/doc/%{name}/examples/config.toml
+
+%changelog
+* Mon Mar 23 2026 ibus-voice contributors - ${VERSION}-1
+- Automated package build
 EOF
 
-echo "RPM spec prepared at ${SPEC_DIR}/ibus-voice.spec"
+rpmbuild \
+  --define "_topdir ${RPM_ROOT}" \
+  --define "_tmppath ${TMP_DIR}" \
+  -bb "${SPEC_PATH}" >/dev/null
+find "${RPM_ROOT}/RPMS" -name '*.rpm' -exec cp {} "${PACKAGE_DIR}/" \;
+
+echo "RPM package created in ${PACKAGE_DIR}"
