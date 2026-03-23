@@ -70,10 +70,13 @@ The repository now contains an initial Python implementation skeleton for:
 - a push-to-talk engine state machine
 - PyAudio-based recorder integration
 - OpenAI and Gemini provider adapters
+- optional OpenAI-compatible cleanup after transcription
 - an IBus engine registration and hotkey handling layer
 - unit tests for core behavior
 
 The IBus desktop wiring is now present at the code level and still needs live end-to-end validation with an installed engine on a Linux desktop.
+
+Recent design work in this repository has also started closing feature gaps identified by reviewing the Koe voice input project and its public documentation, adapted for Linux and IBus rather than copied directly.
 
 ## Development
 
@@ -88,6 +91,16 @@ Validate a config file with:
 ```bash
 PYTHONPATH=src python3 -m ibus_voice.cli --config examples/config.toml --check
 ```
+
+If cleanup is configured and enabled, `ibus-voice` will:
+
+1. send recorded audio to the configured speech-to-text provider
+2. optionally send the raw transcript to a text cleanup model
+3. commit the cleaned text through IBus
+
+If the cleanup step is disabled or fails, the raw transcript is still committed.
+
+Example cleanup prompts are provided in `examples/cleanup-system-prompt.txt` and `examples/cleanup-user-prompt.txt`.
 
 Print IBus engine metadata XML with:
 
@@ -118,6 +131,14 @@ ibus restart
 ```
 
 If `ibus-voice` still does not appear in GNOME Settings after installation, log out and log back in.
+
+## Credits
+
+Feature-gap analysis for this phase was informed by the Koe project and its public documentation:
+
+- https://koe.li/docs
+
+`ibus-voice` remains a Linux IBus project with its own architecture and scope.
 
 ## License
 

@@ -5,6 +5,7 @@ import logging
 import sys
 
 from ibus_voice.audio import PyAudioRecorder
+from ibus_voice.cleanup import build_cleaner
 from ibus_voice.config import load_config
 from ibus_voice.engine import VoiceEngine
 from ibus_voice.ibus_service import IBusVoiceService, TextCommitter
@@ -26,10 +27,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     config = load_config(args.config)
     provider = build_provider(config.provider)
+    cleaner = build_cleaner(config.cleanup)
     recorder = PyAudioRecorder(config.audio)
-    engine = VoiceEngine(recorder=recorder, provider=provider, committer=TextCommitter())
+    engine = VoiceEngine(recorder=recorder, provider=provider, committer=TextCommitter(), cleaner=cleaner)
     if args.check:
-        print(f"config ok: provider={config.provider.name} model={config.provider.model}")
+        cleanup_status = "enabled" if config.cleanup and config.cleanup.enabled else "disabled"
+        print(
+            "config ok: "
+            f"provider={config.provider.name} model={config.provider.model} cleanup={cleanup_status}"
+        )
         return 0
     service = IBusVoiceService(config=config, voice_engine=engine)
     return service.run()

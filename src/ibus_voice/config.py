@@ -7,6 +7,7 @@ import tomllib
 
 
 DEFAULT_CONFIG_PATH = Path.home() / ".config" / "ibus-voice" / "config.toml"
+DEFAULT_CONFIG_DIR = DEFAULT_CONFIG_PATH.parent
 
 
 @dataclass(slots=True)
@@ -34,20 +35,32 @@ class HotkeyConfig:
 
 
 @dataclass(slots=True)
+class CleanupConfig:
+    enabled: bool = False
+    base_url: str = ""
+    api_key: str = ""
+    model: str = ""
+    timeout_seconds: float = 8.0
+    system_prompt_path: Path | None = None
+    user_prompt_path: Path | None = None
+
+
+@dataclass(slots=True)
 class AppConfig:
     provider: ProviderConfig
     audio: AudioConfig
     hotkey: HotkeyConfig
+    cleanup: CleanupConfig | None = None
 
 
 def load_config(path: str | os.PathLike[str] | None = None) -> AppConfig:
     config_path = Path(path) if path else DEFAULT_CONFIG_PATH
     with config_path.open("rb") as handle:
         raw = tomllib.load(handle)
-    return parse_config(raw)
+    return parse_config(raw, base_dir=config_path.expanduser().resolve().parent)
 
 
-def parse_config(raw: dict) -> AppConfig:
+def parse_config(raw: dict, *, base_dir: Path | None = None) -> AppConfig:
     provider_section = raw.get("provider", {})
     name = provider_section.get("name")
     api_key = provider_section.get("api_key")
@@ -79,7 +92,32 @@ def parse_config(raw: dict) -> AppConfig:
         key=str(hotkey_section.get("key", "space")),
         modifiers=tuple(str(item) for item in modifiers),
     )
-    return AppConfig(provider=provider, audio=audio, hotkey=hotkey)
+    cleanup = _parse_cleanup_config(raw.get("cleanup"), base_dir=base_dir or DEFAULT_CONFIG_DIR)
+    return AppConfig(provider=provider, audio=audio, hotkey=hotkey, cleanup=cleanup)
+
+
+def _parse_cleanup_config(raw: object, *, base_dir: Path) -> CleanupConfig | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ValueError("cleanup section must be a table")
+
+    enabled = bool(raw.get("enabled", False))
+    if not enabled:
+        return CleanupConfig(enabled=False)
+
+    base_url = _required_str(raw.get("base_url"), "cleanup.base_url")
+    api_key = _required_str(raw.get("api_key"), "cleanup.api_key")
+    model = _required_str(raw.get("model"), "cleanup.model")
+    return CleanupConfig(
+        enabled=True,
+        base_url=base_url,
+        api_key=api_key,
+        model=model,
+        timeout_seconds=float(raw.get("timeout_seconds", 8.0)),
+        system_prompt_path=_resolve_optional_path(raw.get("system_prompt_path", "system_prompt.txt"), base_dir),
+        user_prompt_path=_resolve_optional_path(raw.get("user_prompt_path", "user_prompt.txt"), base_dir),
+    )
 
 
 def _optional_str(value: object) -> str | None:
@@ -88,3 +126,19 @@ def _optional_str(value: object) -> str | None:
 
 def _optional_int(value: object) -> int | None:
     return None if value in (None, "") else int(value)
+
+
+def _required_str(value: object, field_name: str) -> str:
+    if value in (None, ""):
+        raise ValueError(f"{field_name} is required when cleanup is enabled")
+    return str(value)
+
+
+def _resolve_optional_path(value: object, base_dir: Path) -> Path | None:
+    text = _optional_str(value)
+    if text is None:
+        return None
+    path = Path(text).expanduser()
+    if path.is_absolute():
+        return path
+    return (base_dir / path).resolve()

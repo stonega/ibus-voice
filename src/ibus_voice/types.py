@@ -20,3 +20,13 @@ class ProviderFailure(Exception):
 
     def __str__(self) -> str:
         return f"{self.provider}: {self.message}"
+
+
+@dataclass(slots=True)
+class CleanupFailure(Exception):
+    cleaner: str
+    message: str
+    retryable: bool = False
+
+    def __str__(self) -> str:
+        return f"{self.cleaner}: {self.message}"
