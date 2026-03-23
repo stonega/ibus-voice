@@ -1,8 +1,8 @@
 # Release Process
 
-## v0.1.0 Baseline
+## v0.1.1 Baseline
 
-This repository now treats `0.1.0` as the first packaged alpha release.
+This repository now treats `0.1.1` as the current packaged alpha release.
 
 Release expectations:
 
@@ -19,4 +19,4 @@ Release expectations:
 4. Run `./scripts/build-rpm.sh` on a system with `rpmbuild`.
 5. Verify artifacts in `.dist/packages/`.
 6. Review `README.md`, `docs/user/getting-started.md`, and `CHANGELOG.md`.
-7. Create the `v0.1.0` tag after the release commit is finalized.
+7. Create the `v0.1.1` tag after the release commit is finalized.

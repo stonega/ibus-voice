@@ -62,9 +62,9 @@ If you are building this project, useful implementation areas will likely includ
 - Speech recognition backend adapters
 - Packaging and installation for desktop environments
 
-## v0.1.0 Status
+## v0.1.1 Status
 
-`v0.1.0` is the first packaged milestone for the project. It includes:
+`v0.1.1` is the current packaged alpha milestone. It includes:
 
 - config loading
 - a push-to-talk engine state machine
@@ -84,7 +84,7 @@ Recent design work in this repository has also started closing feature gaps iden
 
 ## Release Notes
 
-For the `v0.1.0` milestone:
+For the `v0.1.1` milestone:
 
 - supported runtime shape is Python 3.11+ on Linux with IBus
 - the interaction model is push-to-talk dictation
@@ -92,7 +92,7 @@ For the `v0.1.0` milestone:
 - transcript correction is optional and falls back to raw text if correction fails
 - package artifacts can be built locally as `.deb` and `.rpm`
 
-Known limitations for `v0.1.0`:
+Known limitations for `v0.1.1`:
 
 - desktop integration has unit coverage but limited live distro validation
 - no local speech backend is bundled yet

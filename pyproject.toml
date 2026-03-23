@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ibus-voice"
-version = "0.1.0"
+version = "0.1.1"
 description = "Voice input support for IBus on Linux"
 readme = "README.md"
 requires-python = ">=3.11"
