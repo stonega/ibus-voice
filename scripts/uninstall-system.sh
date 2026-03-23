@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PREFIX="/usr/local"
-LAUNCHER_PATH="${PREFIX}/bin/ibus-engine-voice"
+LAUNCHER_PATH="${PREFIX}/bin/ibus-voice"
 APP_DIR="${PREFIX}/share/ibus-voice"
 COMPONENT_PATH="/usr/share/ibus/component/ibus-voice.xml"
 

@@ -84,14 +84,14 @@ Hotkey notes:
 
 Installer behavior:
 
-- `scripts/install-local.sh` installs a local launcher at `~/.local/bin/ibus-engine-voice`
+- `scripts/install-local.sh` installs a local launcher at `~/.local/bin/ibus-voice`
 - the IBus component XML is installed at `~/.local/share/ibus-voice/component/ibus-voice.xml`
 - the default config is copied to `~/.config/ibus-voice/config.toml` if it does not already exist
 - example `dictionary.txt`, `system_prompt.txt`, and `user_prompt.txt` should be copied into `~/.config/ibus-voice/`
 
 System installer behavior:
 
-- `scripts/install-system.sh` installs the launcher at `/usr/local/bin/ibus-engine-voice`
+- `scripts/install-system.sh` installs the launcher at `/usr/local/bin/ibus-voice`
 - the IBus component XML is installed at `/usr/share/ibus/component/ibus-voice.xml`
 - the default config is copied into the invoking user's `~/.config/ibus-voice/config.toml`
 - the launcher reads config from the runtime user's default config path

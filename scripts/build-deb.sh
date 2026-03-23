@@ -41,18 +41,18 @@ cp "${ROOT_DIR}/examples/dictionary.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voi
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/system_prompt.txt"
 cp "${ROOT_DIR}/examples/user_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/user_prompt.txt"
 
-cat > "${PACKAGE_ROOT}/usr/bin/ibus-engine-voice" <<'EOF'
+cat > "${PACKAGE_ROOT}/usr/bin/ibus-voice" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 export PYTHONPATH="/usr/lib/ibus-voice/src${PYTHONPATH:+:$PYTHONPATH}"
 exec /usr/bin/python3 -m ibus_voice.cli "$@"
 EOF
-chmod 0755 "${PACKAGE_ROOT}/usr/bin/ibus-engine-voice"
+chmod 0755 "${PACKAGE_ROOT}/usr/bin/ibus-voice"
 
 PYTHONPATH="${ROOT_DIR}/src" /usr/bin/python3 - <<'PY' > "${PACKAGE_ROOT}/usr/share/ibus/component/ibus-voice.xml"
 from ibus_voice.metadata import render_component_xml
 
-print(render_component_xml("/usr/bin/ibus-engine-voice"), end="")
+print(render_component_xml("/usr/bin/ibus-voice"), end="")
 PY
 
 cat > "${PACKAGE_ROOT}/DEBIAN/control" <<EOF

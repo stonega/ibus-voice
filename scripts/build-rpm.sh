@@ -46,18 +46,18 @@ cp "${ROOT_DIR}/examples/dictionary.txt" "${SOURCE_DIR}/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${SOURCE_DIR}/examples/system_prompt.txt"
 cp "${ROOT_DIR}/examples/user_prompt.txt" "${SOURCE_DIR}/examples/user_prompt.txt"
 
-cat > "${SOURCE_DIR}/ibus-engine-voice" <<'EOF'
+cat > "${SOURCE_DIR}/ibus-voice" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 export PYTHONPATH="/usr/lib/ibus-voice/src${PYTHONPATH:+:$PYTHONPATH}"
 exec /usr/bin/python3 -m ibus_voice.cli "$@"
 EOF
-chmod 0755 "${SOURCE_DIR}/ibus-engine-voice"
+chmod 0755 "${SOURCE_DIR}/ibus-voice"
 
 PYTHONPATH="${ROOT_DIR}/src" /usr/bin/python3 - <<'PY' > "${SOURCE_DIR}/ibus-voice.xml"
 from ibus_voice.metadata import render_component_xml
 
-print(render_component_xml("/usr/bin/ibus-engine-voice"), end="")
+print(render_component_xml("/usr/bin/ibus-voice"), end="")
 PY
 
 tar -C "${RPM_ROOT}/SOURCES" -czf "${RPM_ROOT}/SOURCES/ibus-voice-${VERSION}.tar.gz" "ibus-voice-${VERSION}"
@@ -86,7 +86,7 @@ mkdir -p %{buildroot}/usr/share/doc/%{name}/examples
 cp -r src %{buildroot}/usr/lib/ibus-voice/
 cp README.md %{buildroot}/usr/lib/ibus-voice/
 cp LICENSE %{buildroot}/usr/lib/ibus-voice/
-cp ibus-engine-voice %{buildroot}/usr/bin/ibus-engine-voice
+cp ibus-voice %{buildroot}/usr/bin/ibus-voice
 cp ibus-voice.xml %{buildroot}/usr/share/ibus/component/ibus-voice.xml
 cp examples/config.toml %{buildroot}/usr/share/doc/%{name}/examples/config.toml
 cp examples/dictionary.txt %{buildroot}/usr/share/doc/%{name}/examples/dictionary.txt
@@ -95,7 +95,7 @@ cp examples/user_prompt.txt %{buildroot}/usr/share/doc/%{name}/examples/user_pro
 
 %files
 /usr/lib/ibus-voice
-/usr/bin/ibus-engine-voice
+/usr/bin/ibus-voice
 /usr/share/ibus/component/ibus-voice.xml
 /usr/share/doc/%{name}/examples/config.toml
 /usr/share/doc/%{name}/examples/dictionary.txt

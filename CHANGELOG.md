@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.1.2 - 2026-03-23
+
+- renamed packaged and installed launchers from `ibus-engine-voice` to `ibus-voice` for consistent CLI behavior
+- updated Debian and RPM packaging to install `/usr/bin/ibus-voice` and generate matching IBus component XML
+- updated local and system uninstall scripts to remove the renamed launcher correctly
+- refreshed user documentation to reflect the current launcher name and release version
+
 ## 0.1.1 - 2026-03-23
 
 - added SQLite-backed session history persistence and a CLI viewer for completed sessions

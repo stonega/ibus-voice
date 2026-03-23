@@ -12,7 +12,7 @@ if [[ -z "${TARGET_HOME}" ]]; then
   TARGET_HOME="${HOME}"
 fi
 CONFIG_DIR="${TARGET_HOME}/.config/ibus-voice"
-LAUNCHER_PATH="${BIN_DIR}/ibus-engine-voice"
+LAUNCHER_PATH="${BIN_DIR}/ibus-voice"
 COMPONENT_PATH="${COMPONENT_DIR}/ibus-voice.xml"
 
 mkdir -p "${BIN_DIR}" "${APP_DIR}" "${COMPONENT_DIR}" "${CONFIG_DIR}"

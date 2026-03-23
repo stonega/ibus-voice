@@ -16,10 +16,10 @@ class MetadataTests(unittest.TestCase):
         self.assertIn("<symbol>V</symbol>", rendered)
 
     def test_render_component_xml_contains_exec_commands(self) -> None:
-        rendered = render_component_xml("/home/test/.local/bin/ibus-engine-voice")
+        rendered = render_component_xml("/home/test/.local/bin/ibus-voice")
 
-        self.assertIn("<exec>/home/test/.local/bin/ibus-engine-voice --ibus</exec>", rendered)
-        self.assertIn("engines exec='/home/test/.local/bin/ibus-engine-voice --xml'", rendered)
+        self.assertIn("<exec>/home/test/.local/bin/ibus-voice --ibus</exec>", rendered)
+        self.assertIn("engines exec='/home/test/.local/bin/ibus-voice --xml'", rendered)
 
     def test_rendered_xml_uses_package_version(self) -> None:
         rendered = render_engines_xml()

@@ -5,7 +5,7 @@ PREFIX="${HOME}/.local"
 BIN_DIR="${PREFIX}/bin"
 APP_DIR="${PREFIX}/share/ibus-voice"
 COMPONENT_PATH="${PREFIX}/share/ibus/component/ibus-voice.xml"
-LAUNCHER_PATH="${BIN_DIR}/ibus-engine-voice"
+LAUNCHER_PATH="${BIN_DIR}/ibus-voice"
 
 rm -f "${LAUNCHER_PATH}" "${COMPONENT_PATH}"
 rm -rf "${APP_DIR}"

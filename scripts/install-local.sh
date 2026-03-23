@@ -7,7 +7,7 @@ BIN_DIR="${PREFIX}/bin"
 APP_DIR="${PREFIX}/share/ibus-voice"
 COMPONENT_DIR="${APP_DIR}/component"
 CONFIG_DIR="${HOME}/.config/ibus-voice"
-LAUNCHER_PATH="${BIN_DIR}/ibus-engine-voice"
+LAUNCHER_PATH="${BIN_DIR}/ibus-voice"
 COMPONENT_PATH="${COMPONENT_DIR}/ibus-voice.xml"
 
 mkdir -p "${BIN_DIR}" "${APP_DIR}" "${COMPONENT_DIR}" "${CONFIG_DIR}"
