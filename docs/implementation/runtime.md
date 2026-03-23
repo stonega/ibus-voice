@@ -25,5 +25,5 @@
 
 ## Current Gaps
 
-- IBus registration is implemented, but desktop packaging and engine XML integration still need distro-level testing
-- package CI now builds `.deb` and `.rpm` artifacts, but installation and desktop integration still need distro-level validation
+- IBus registration is implemented, but installed-engine behavior still needs distro-level testing
+- package build scripts produce `.deb` and `.rpm` artifacts, but installation and desktop integration still need distro-level validation

@@ -1,6 +1,6 @@
 # ibus-voice
 
-`ibus-voice` is a Linux project intended to add voice input support to the IBus input framework.
+`ibus-voice` is a Linux project that adds voice input support to the IBus input framework.
 
 The goal is to make spoken dictation available as a normal input method so text can be entered into desktop applications through IBus, similar to switching to any other keyboard or IME.
 
@@ -11,7 +11,7 @@ The goal is to make spoken dictation available as a normal input method so text 
 - Provide a practical path for local or remote speech-to-text backends
 - Keep the user workflow simple: enable the engine, start speaking, and insert text
 
-## Planned Scope
+## Scope
 
 This repository is expected to contain:
 
@@ -62,9 +62,9 @@ If you are building this project, useful implementation areas will likely includ
 - Speech recognition backend adapters
 - Packaging and installation for desktop environments
 
-## Current Status
+## v0.1.0 Status
 
-The repository now contains an initial Python implementation skeleton for:
+`v0.1.0` is the first packaged milestone for the project. It includes:
 
 - config loading
 - a push-to-talk engine state machine
@@ -72,11 +72,29 @@ The repository now contains an initial Python implementation skeleton for:
 - OpenAI and Gemini provider adapters
 - optional OpenAI-compatible cleanup after transcription
 - an IBus engine registration and hotkey handling layer
+- local and system install scripts
+- Debian and RPM packaging scripts
 - unit tests for core behavior
 
-The IBus desktop wiring is now present at the code level and still needs live end-to-end validation with an installed engine on a Linux desktop.
+The IBus desktop wiring is present in the codebase, but desktop and distro validation is still limited. This release should be treated as an alpha milestone for Linux users who are comfortable testing an early IBus engine.
 
 Recent design work in this repository has also started closing feature gaps identified by reviewing the Koe voice input project and its public documentation, adapted for Linux and IBus rather than copied directly.
+
+## Release Notes
+
+For the `v0.1.0` milestone:
+
+- supported runtime shape is Python 3.11+ on Linux with IBus
+- the interaction model is push-to-talk dictation
+- speech recognition backends are pluggable and currently include OpenAI and Gemini adapters
+- transcript cleanup is optional and falls back to raw text if cleanup fails
+- package artifacts can be built locally as `.deb` and `.rpm`
+
+Known limitations for `v0.1.0`:
+
+- desktop integration has unit coverage but limited live distro validation
+- no local speech backend is bundled yet
+- only final text commit is implemented; partial transcript display is not
 
 ## Development
 
@@ -121,7 +139,12 @@ Build Linux packages locally with:
 ./scripts/build-rpm.sh
 ```
 
-Artifacts are written to `.dist/packages/`. GitHub Actions also builds and uploads these package artifacts on pushes, pull requests, tags, and manual runs.
+Artifacts are written to `.dist/packages/`.
+
+Packaging prerequisites:
+
+- `./scripts/build-deb.sh` requires `dpkg-deb`
+- `./scripts/build-rpm.sh` requires `rpmbuild`
 
 For GNOME or standard desktop integration, prefer the system installer because IBus reads component XML from `/usr/share/ibus/component` by default:
 
@@ -142,4 +165,4 @@ Feature-gap analysis for this phase was informed by the Koe project and its publ
 
 ## License
 
-Add a license file before distribution.
+This project is released under the MIT License. See `LICENSE`.

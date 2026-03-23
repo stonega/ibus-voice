@@ -10,7 +10,24 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [{ name = "ibus-voice contributors" }]
+keywords = ["ibus", "linux", "speech-to-text", "voice", "dictation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: X11 Applications",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Desktop Environment :: Input Devices",
+  "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/stonega/ibus-voice"
+Repository = "https://github.com/stonega/ibus-voice"
+Issues = "https://github.com/stonega/ibus-voice/issues"
 
 [project.optional-dependencies]
 runtime = [

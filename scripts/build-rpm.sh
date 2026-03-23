@@ -17,6 +17,13 @@ PACKAGE_DIR="${ROOT_DIR}/.dist/packages"
 SOURCE_DIR="${RPM_ROOT}/SOURCES/ibus-voice-${VERSION}"
 SPEC_PATH="${RPM_ROOT}/SPECS/ibus-voice.spec"
 TMP_DIR="${RPM_ROOT}/tmp"
+RPM_CHANGELOG_DATE="$(LC_ALL=C date '+%a %b %d %Y')"
+
+if ! command -v rpmbuild >/dev/null 2>&1; then
+  echo "error: rpmbuild is required to build RPM packages" >&2
+  echo "Install rpm-build tooling and rerun ./scripts/build-rpm.sh" >&2
+  exit 1
+fi
 
 echo "Building RPM package for version ${VERSION}"
 rm -rf "${RPM_ROOT}"
@@ -35,6 +42,8 @@ cp -R "${ROOT_DIR}/src" "${SOURCE_DIR}/src"
 cp "${ROOT_DIR}/README.md" "${SOURCE_DIR}/README.md"
 cp "${ROOT_DIR}/LICENSE" "${SOURCE_DIR}/LICENSE"
 cp "${ROOT_DIR}/examples/config.toml" "${SOURCE_DIR}/examples/config.toml"
+cp "${ROOT_DIR}/examples/cleanup-system-prompt.txt" "${SOURCE_DIR}/examples/cleanup-system-prompt.txt"
+cp "${ROOT_DIR}/examples/cleanup-user-prompt.txt" "${SOURCE_DIR}/examples/cleanup-user-prompt.txt"
 
 cat > "${SOURCE_DIR}/ibus-engine-voice" <<'EOF'
 #!/usr/bin/env bash
@@ -79,15 +88,19 @@ cp LICENSE %{buildroot}/usr/lib/ibus-voice/
 cp ibus-engine-voice %{buildroot}/usr/bin/ibus-engine-voice
 cp ibus-voice.xml %{buildroot}/usr/share/ibus/component/ibus-voice.xml
 cp examples/config.toml %{buildroot}/usr/share/doc/%{name}/examples/config.toml
+cp examples/cleanup-system-prompt.txt %{buildroot}/usr/share/doc/%{name}/examples/cleanup-system-prompt.txt
+cp examples/cleanup-user-prompt.txt %{buildroot}/usr/share/doc/%{name}/examples/cleanup-user-prompt.txt
 
 %files
 /usr/lib/ibus-voice
 /usr/bin/ibus-engine-voice
 /usr/share/ibus/component/ibus-voice.xml
 /usr/share/doc/%{name}/examples/config.toml
+/usr/share/doc/%{name}/examples/cleanup-system-prompt.txt
+/usr/share/doc/%{name}/examples/cleanup-user-prompt.txt
 
 %changelog
-* Mon Mar 23 2026 ibus-voice contributors - ${VERSION}-1
+* ${RPM_CHANGELOG_DATE} ibus-voice contributors - ${VERSION}-1
 - Automated package build
 EOF
 

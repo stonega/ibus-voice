@@ -1,6 +1,6 @@
 # Getting Started
 
-This project is in an early stage.
+`ibus-voice` `v0.1.0` is an early alpha release.
 
 System install for GNOME and normal desktop use:
 
@@ -37,6 +37,15 @@ Useful commands:
 PYTHONPATH=src python3 -m ibus_voice.cli --xml
 PYTHONPATH=src python3 -m ibus_voice.cli --config examples/config.toml --check
 ```
+
+Package builds:
+
+```bash
+./scripts/build-deb.sh
+./scripts/build-rpm.sh
+```
+
+`build-deb.sh` requires `dpkg-deb`. `build-rpm.sh` requires `rpmbuild`.
 
 With cleanup disabled, `ibus-voice` commits the raw speech-to-text result.
 

@@ -17,6 +17,12 @@ PACKAGE_DIR="${ROOT_DIR}/.dist/packages"
 PACKAGE_ROOT="${BUILD_DIR}/ibus-voice_${VERSION}"
 ARTIFACT_PATH="${PACKAGE_DIR}/ibus-voice_${VERSION}_all.deb"
 
+if ! command -v dpkg-deb >/dev/null 2>&1; then
+  echo "error: dpkg-deb is required to build Debian packages" >&2
+  echo "Install dpkg tooling and rerun ./scripts/build-deb.sh" >&2
+  exit 1
+fi
+
 echo "Building Debian package ${ARTIFACT_PATH}"
 rm -rf "${BUILD_DIR}"
 mkdir -p \
@@ -31,6 +37,8 @@ cp -R "${ROOT_DIR}/src" "${PACKAGE_ROOT}/usr/lib/ibus-voice/"
 cp "${ROOT_DIR}/README.md" "${PACKAGE_ROOT}/usr/lib/ibus-voice/"
 cp "${ROOT_DIR}/LICENSE" "${PACKAGE_ROOT}/usr/lib/ibus-voice/"
 cp "${ROOT_DIR}/examples/config.toml" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/config.toml"
+cp "${ROOT_DIR}/examples/cleanup-system-prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/cleanup-system-prompt.txt"
+cp "${ROOT_DIR}/examples/cleanup-user-prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/cleanup-user-prompt.txt"
 
 cat > "${PACKAGE_ROOT}/usr/bin/ibus-engine-voice" <<'EOF'
 #!/usr/bin/env bash
