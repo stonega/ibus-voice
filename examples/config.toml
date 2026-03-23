@@ -1,0 +1,15 @@
+[provider]
+name = "openai"
+api_key = "replace-me"
+model = "gpt-4o-transcribe"
+timeout_seconds = 30
+
+[audio]
+sample_rate = 16000
+channels = 1
+chunk_size = 1024
+sample_width = 2
+
+[hotkey]
+key = "space"
+modifiers = ["Control"]

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ibus-voice"
+version = "0.1.0"
+description = "Voice input support for IBus on Linux"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "ibus-voice contributors" }]
+dependencies = []
+
+[project.optional-dependencies]
+runtime = [
+  "PyAudio>=0.2.14",
+]
+
+[project.scripts]
+ibus-voice = "ibus_voice.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

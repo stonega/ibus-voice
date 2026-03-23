@@ -1,0 +1,86 @@
+from __future__ import annotations
+
+import unittest
+
+from ibus_voice.audio import AudioPayload
+from ibus_voice.config import ProviderConfig
+from ibus_voice.providers.factory import build_provider
+from ibus_voice.providers.gemini import GeminiProvider
+from ibus_voice.providers.openai import OpenAIProvider
+from ibus_voice.types import ProviderFailure
+
+
+class FakeTransport:
+    def __init__(self, response: dict | None = None, failure: Exception | None = None) -> None:
+        self.response = response or {}
+        self.failure = failure
+        self.last_request: dict | None = None
+
+    def post_json(self, url: str, headers: dict[str, str], payload: dict, timeout: float) -> dict:
+        self.last_request = {
+            "kind": "json",
+            "url": url,
+            "headers": headers,
+            "payload": payload,
+            "timeout": timeout,
+        }
+        if self.failure is not None:
+            raise self.failure
+        return self.response
+
+    def post_multipart(
+        self,
+        url: str,
+        headers: dict[str, str],
+        fields: dict[str, str],
+        files: dict[str, tuple[str, str, bytes]],
+        timeout: float,
+    ) -> dict:
+        self.last_request = {
+            "kind": "multipart",
+            "url": url,
+            "headers": headers,
+            "fields": fields,
+            "files": files,
+            "timeout": timeout,
+        }
+        if self.failure is not None:
+            raise self.failure
+        return self.response
+
+
+class ProviderTests(unittest.TestCase):
+    def test_openai_normalizes_text(self) -> None:
+        provider = OpenAIProvider(
+            config=ProviderConfig(name="openai", api_key="x", model="m"),
+            transport=FakeTransport({"text": " hello "}),
+        )
+
+        result = provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
+
+        self.assertEqual(result.text, "hello")
+        self.assertEqual(result.provider, "openai")
+        self.assertEqual(provider.transport.last_request["kind"], "multipart")
+        self.assertEqual(provider.transport.last_request["fields"]["model"], "m")
+
+    def test_gemini_extracts_candidate_text(self) -> None:
+        provider = GeminiProvider(
+            config=ProviderConfig(name="gemini", api_key="x", model="m"),
+            transport=FakeTransport(
+                {
+                    "candidates": [
+                        {"content": {"parts": [{"text": " transcript "}]}},
+                    ]
+                }
+            ),
+        )
+
+        result = provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
+
+        self.assertEqual(result.text, "transcript")
+        self.assertEqual(result.provider, "gemini")
+        self.assertEqual(provider.transport.last_request["kind"], "json")
+
+    def test_provider_factory_rejects_unknown_provider(self) -> None:
+        with self.assertRaises(ProviderFailure):
+            build_provider(ProviderConfig(name="unknown", api_key="x", model="m"))
