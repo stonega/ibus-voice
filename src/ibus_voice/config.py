@@ -36,7 +36,7 @@ class HotkeyConfig:
 
 
 @dataclass(slots=True)
-class CleanupConfig:
+class CorrectionConfig:
     enabled: bool = False
     base_url: str = ""
     api_key: str = ""
@@ -59,7 +59,11 @@ class AppConfig:
     audio: AudioConfig
     hotkey: HotkeyConfig
     history: HistoryConfig
-    cleanup: CleanupConfig | None = None
+    correction: CorrectionConfig | None = None
+
+    @property
+    def cleanup(self) -> CorrectionConfig | None:
+        return self.correction
 
 
 def load_config(path: str | os.PathLike[str] | None = None) -> AppConfig:
@@ -110,12 +114,13 @@ def parse_config(raw: dict, *, base_dir: Path | None = None) -> AppConfig:
         key=str(hotkey_section.get("key", "space")),
         modifiers=tuple(str(item) for item in modifiers),
     )
-    cleanup = _parse_cleanup_config(
-        raw.get("cleanup"),
+    correction = _parse_correction_config(
+        raw.get("correction"),
+        legacy_raw=raw.get("cleanup"),
         base_dir=base_dir or DEFAULT_CONFIG_DIR,
         default_history_path=history.path,
     )
-    return AppConfig(provider=provider, audio=audio, hotkey=hotkey, history=history, cleanup=cleanup)
+    return AppConfig(provider=provider, audio=audio, hotkey=hotkey, history=history, correction=correction)
 
 def _parse_history_config(raw: object, *, base_dir: Path) -> HistoryConfig:
     if raw is None:
@@ -127,30 +132,43 @@ def _parse_history_config(raw: object, *, base_dir: Path) -> HistoryConfig:
     )
 
 
-def _parse_cleanup_config(raw: object, *, base_dir: Path, default_history_path: Path) -> CleanupConfig | None:
-    if raw is None:
+def _parse_correction_config(
+    raw: object,
+    *,
+    legacy_raw: object,
+    base_dir: Path,
+    default_history_path: Path,
+) -> CorrectionConfig | None:
+    if raw is not None and legacy_raw is not None:
+        raise ValueError("use only one of correction or cleanup sections")
+    source = raw if raw is not None else legacy_raw
+    section_name = "correction" if raw is not None else "cleanup"
+    if source is None:
         return None
-    if not isinstance(raw, dict):
-        raise ValueError("cleanup section must be a table")
+    if not isinstance(source, dict):
+        raise ValueError(f"{section_name} section must be a table")
 
-    enabled = bool(raw.get("enabled", False))
+    enabled = bool(source.get("enabled", False))
     if not enabled:
-        return CleanupConfig(enabled=False)
+        return CorrectionConfig(enabled=False)
 
-    base_url = _required_str(raw.get("base_url"), "cleanup.base_url")
-    api_key = _required_str(raw.get("api_key"), "cleanup.api_key")
-    model = _required_str(raw.get("model"), "cleanup.model")
-    return CleanupConfig(
+    base_url = _required_str(source.get("base_url"), f"{section_name}.base_url")
+    api_key = _required_str(source.get("api_key"), f"{section_name}.api_key")
+    model = _required_str(source.get("model"), f"{section_name}.model")
+    return CorrectionConfig(
         enabled=True,
         base_url=base_url,
         api_key=api_key,
         model=model,
-        timeout_seconds=float(raw.get("timeout_seconds", 8.0)),
-        dictionary_path=_resolve_optional_path(raw.get("dictionary_path", "dictionary.txt"), base_dir),
-        history_path=_resolve_optional_path(raw.get("history_path"), base_dir) or default_history_path,
-        system_prompt_path=_resolve_optional_path(raw.get("system_prompt_path", "system_prompt.txt"), base_dir),
-        user_prompt_path=_resolve_optional_path(raw.get("user_prompt_path", "user_prompt.txt"), base_dir),
+        timeout_seconds=float(source.get("timeout_seconds", 8.0)),
+        dictionary_path=_resolve_optional_path(source.get("dictionary_path", "dictionary.txt"), base_dir),
+        history_path=_resolve_optional_path(source.get("history_path"), base_dir) or default_history_path,
+        system_prompt_path=_resolve_optional_path(source.get("system_prompt_path", "system_prompt.txt"), base_dir),
+        user_prompt_path=_resolve_optional_path(source.get("user_prompt_path", "user_prompt.txt"), base_dir),
     )
+
+
+CleanupConfig = CorrectionConfig
 
 
 def _optional_str(value: object) -> str | None:
@@ -163,7 +181,7 @@ def _optional_int(value: object) -> int | None:
 
 def _required_str(value: object, field_name: str) -> str:
     if value in (None, ""):
-        raise ValueError(f"{field_name} is required when cleanup is enabled")
+        raise ValueError(f"{field_name} is required when correction is enabled")
     return str(value)
 
 

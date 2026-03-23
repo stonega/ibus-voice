@@ -5,7 +5,7 @@
 - `config.py`: config loading and validation
 - `audio.py`: recorder abstractions and PyAudio integration
 - `audio.py`: recorder abstractions, PCM capture, and WAV payload encoding
-- `cleanup.py`: optional OpenAI-compatible transcript cleanup
+- `correction.py`: optional OpenAI-compatible transcript correction
 - `engine.py`: state machine for push-to-talk dictation
 - `history.py`: SQLite persistence for completed dictation sessions
 - `providers/`: normalized speech backend adapters
@@ -19,12 +19,12 @@
 - recording stops on release
 - audio is sent to the selected provider
 - if `dictionary.txt` exists, provider-specific ASR prompts bias transcription toward canonical terms
-- if configured, the raw transcript is sent to a cleanup model before commit
-- cleanup templates can use transcript text, recent session history, and dictionary content
-- cleanup failures fall back to the raw transcript
+- if configured, the raw transcript is sent to a correction model before commit
+- correction templates can use transcript text, recent session history, and dictionary content
+- correction failures fall back to the raw transcript
 - only final text is committed
 - successful committed sessions are appended to the configured history database path
-- cleanup token usage is persisted in session metadata when the cleanup response includes `usage`
+- correction token usage is persisted in session metadata when the correction response includes `usage`
 - OpenAI receives multipart file uploads
 - Gemini receives inline audio data through `generateContent`
 

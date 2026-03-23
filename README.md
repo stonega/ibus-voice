@@ -71,7 +71,7 @@ If you are building this project, useful implementation areas will likely includ
 - PyAudio-based recorder integration
 - OpenAI and Gemini provider adapters
 - dictionary-aware OpenAI and Gemini transcription prompting
-- optional OpenAI-compatible cleanup after transcription with transcript history context
+- optional OpenAI-compatible correction after transcription with transcript history context
 - an IBus engine registration and hotkey handling layer
 - SQLite history for completed sessions at `~/.config/ibus-voice/history.db`
 - local and system install scripts
@@ -89,7 +89,7 @@ For the `v0.1.0` milestone:
 - supported runtime shape is Python 3.11+ on Linux with IBus
 - the interaction model is push-to-talk dictation
 - speech recognition backends are pluggable and currently include OpenAI and Gemini adapters
-- transcript cleanup is optional and falls back to raw text if cleanup fails
+- transcript correction is optional and falls back to raw text if correction fails
 - package artifacts can be built locally as `.deb` and `.rpm`
 
 Known limitations for `v0.1.0`:
@@ -112,13 +112,13 @@ Validate a config file with:
 PYTHONPATH=src python3 -m ibus_voice.cli --config examples/config.toml --check
 ```
 
-If cleanup is configured and enabled, `ibus-voice` will:
+If correction is configured and enabled, `ibus-voice` will:
 
 1. send recorded audio to the configured speech-to-text provider
-2. optionally send the raw transcript to a text cleanup model
+2. optionally send the raw transcript to a text correction model
 3. commit the cleaned text through IBus
 
-If the cleanup step is disabled or fails, the raw transcript is still committed.
+If the correction step is disabled or fails, the raw transcript is still committed.
 
 Example prompt files are provided in `examples/system_prompt.txt`, `examples/user_prompt.txt`, and `examples/dictionary.txt`. The intended split is simple: `system_prompt.txt` carries stable correction policy, `user_prompt.txt` stays structural, and `dictionary.txt` holds canonical terms.
 

@@ -4,7 +4,7 @@ import unittest
 
 from ibus_voice.audio import AudioPayload, MemoryRecorder
 from ibus_voice.engine import VoiceEngine
-from ibus_voice.types import CleanupFailure, ProviderFailure, TranscriptResult
+from ibus_voice.types import CorrectionFailure, ProviderFailure, TranscriptResult
 
 
 class StubCommitter:
@@ -29,7 +29,7 @@ class StubProvider:
         return self.result
 
 
-class StubCleaner:
+class StubCorrector:
     def __init__(
         self,
         text: str | None = None,
@@ -40,7 +40,7 @@ class StubCleaner:
         self.failure = failure
         self.metadata = metadata or {}
 
-    def clean(self, transcript: str) -> str:
+    def correct(self, transcript: str) -> str:
         if self.failure is not None:
             raise self.failure
         if self.text is None:
@@ -79,7 +79,7 @@ class VoiceEngineTests(unittest.TestCase):
         recorder = MemoryRecorder()
         provider = StubProvider(TranscriptResult(text="hello world", provider="stub"))
         committer = StubCommitter()
-        engine = VoiceEngine(recorder=recorder, provider=provider, committer=committer, cleaner=StubCleaner())
+        engine = VoiceEngine(recorder=recorder, provider=provider, committer=committer, corrector=StubCorrector())
 
         engine.handle_press()
         recorder.push(b"voice")
@@ -94,7 +94,7 @@ class VoiceEngineTests(unittest.TestCase):
             recorder=MemoryRecorder(),
             provider=StubProvider(TranscriptResult(text="ignored", provider="stub")),
             committer=StubCommitter(),
-            cleaner=StubCleaner(),
+            corrector=StubCorrector(),
         )
 
         engine.handle_release()
@@ -107,7 +107,7 @@ class VoiceEngineTests(unittest.TestCase):
             recorder=MemoryRecorder(),
             provider=StubProvider(failure=ProviderFailure("stub", "boom")),
             committer=StubCommitter(),
-            cleaner=StubCleaner(),
+            corrector=StubCorrector(),
         )
 
         engine.handle_press()
@@ -118,14 +118,14 @@ class VoiceEngineTests(unittest.TestCase):
         self.assertEqual(engine.last_error, "stub: boom")
         self.assertIn("transcription_failed", engine.events)
 
-    def test_cleanup_result_is_committed_when_available(self) -> None:
+    def test_correction_result_is_committed_when_available(self) -> None:
         engine = VoiceEngine(
             recorder=MemoryRecorder(),
             provider=StubProvider(TranscriptResult(text="hello world", provider="stub")),
             committer=StubCommitter(),
-            cleaner=StubCleaner(
+            corrector=StubCorrector(
                 text="Hello world.",
-                metadata={"cleanup_usage": {"prompt_tokens": 7, "completion_tokens": 3, "total_tokens": 10}},
+                metadata={"correction_usage": {"prompt_tokens": 7, "completion_tokens": 3, "total_tokens": 10}},
             ),
         )
 
@@ -138,16 +138,16 @@ class VoiceEngineTests(unittest.TestCase):
         self.assertEqual(engine.last_result.text, "Hello world.")
         self.assertEqual(engine.last_result.metadata["raw_text"], "hello world")
         self.assertEqual(
-            engine.last_result.metadata["cleanup_usage"],
+            engine.last_result.metadata["correction_usage"],
             {"prompt_tokens": 7, "completion_tokens": 3, "total_tokens": 10},
         )
 
-    def test_cleanup_failure_falls_back_to_raw_text(self) -> None:
+    def test_correction_failure_falls_back_to_raw_text(self) -> None:
         engine = VoiceEngine(
             recorder=MemoryRecorder(),
             provider=StubProvider(TranscriptResult(text="hello world", provider="stub")),
             committer=StubCommitter(),
-            cleaner=StubCleaner(failure=CleanupFailure("cleanup", "timeout")),
+            corrector=StubCorrector(failure=CorrectionFailure("correction", "timeout")),
         )
 
         engine.handle_press()
@@ -155,8 +155,8 @@ class VoiceEngineTests(unittest.TestCase):
         engine.handle_release()
 
         self.assertEqual(engine.committer.values, ["hello world"])  # type: ignore[attr-defined]
-        self.assertEqual(engine.last_warning, "cleanup: timeout")
-        self.assertIn("cleanup_failed_fallback", engine.events)
+        self.assertEqual(engine.last_warning, "correction: timeout")
+        self.assertIn("correction_failed_fallback", engine.events)
 
     def test_completed_session_is_saved_to_history(self) -> None:
         history = StubHistory()
@@ -164,7 +164,7 @@ class VoiceEngineTests(unittest.TestCase):
             recorder=MemoryRecorder(),
             provider=StubProvider(TranscriptResult(text="hello world", provider="stub", latency_ms=42)),
             committer=StubCommitter(),
-            cleaner=StubCleaner(text="Hello world."),
+            corrector=StubCorrector(text="Hello world."),
             history=history,
         )
 
@@ -183,7 +183,7 @@ class VoiceEngineTests(unittest.TestCase):
             recorder=MemoryRecorder(),
             provider=StubProvider(TranscriptResult(text="hello world", provider="stub")),
             committer=StubCommitter(),
-            cleaner=StubCleaner(),
+            corrector=StubCorrector(),
             history=StubHistory(failure=RuntimeError("database is locked")),
         )
 

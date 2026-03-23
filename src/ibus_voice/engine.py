@@ -4,9 +4,9 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from ibus_voice.audio import AudioPayload, Recorder
-from ibus_voice.cleanup import get_cleaner_metadata
+from ibus_voice.correction import get_corrector_metadata
 from ibus_voice.history import SessionHistory
-from ibus_voice.types import CleanupFailure, ProviderFailure, TranscriptResult
+from ibus_voice.types import CorrectionFailure, ProviderFailure, TranscriptResult
 
 
 class Committer(Protocol):
@@ -17,8 +17,8 @@ class SpeechProvider(Protocol):
     def transcribe(self, audio: AudioPayload) -> TranscriptResult: ...
 
 
-class TextCleaner(Protocol):
-    def clean(self, transcript: str) -> str: ...
+class TextCorrector(Protocol):
+    def correct(self, transcript: str) -> str: ...
 
 
 @dataclass(slots=True)
@@ -26,7 +26,7 @@ class VoiceEngine:
     recorder: Recorder
     provider: SpeechProvider
     committer: Committer
-    cleaner: TextCleaner
+    corrector: TextCorrector
     history: SessionHistory | None = None
     state: str = "idle"
     last_error: str | None = None
@@ -65,19 +65,19 @@ class VoiceEngine:
         if result.text.strip():
             self.last_raw_text = result.text
             final_text = result.text
-            cleanup_metadata: dict[str, object] = {}
+            correction_metadata: dict[str, object] = {}
             try:
-                final_text = self.cleaner.clean(result.text)
-                cleanup_metadata = get_cleaner_metadata(self.cleaner)
-            except CleanupFailure as exc:
+                final_text = self.corrector.correct(result.text)
+                correction_metadata = get_corrector_metadata(self.corrector)
+            except CorrectionFailure as exc:
                 self.last_warning = str(exc)
-                self.events.append("cleanup_failed_fallback")
+                self.events.append("correction_failed_fallback")
             self.committer.commit_text(final_text)
             self.last_result = TranscriptResult(
                 text=final_text,
                 provider=result.provider,
                 latency_ms=result.latency_ms,
-                metadata={**result.metadata, **cleanup_metadata, "raw_text": result.text},
+                metadata={**result.metadata, **correction_metadata, "raw_text": result.text},
             )
             self._save_history(self.last_result, raw_text=result.text)
             self.events.append("text_committed")

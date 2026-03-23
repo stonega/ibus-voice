@@ -157,10 +157,10 @@ def format_completed_sessions(sessions: list[HistorySession]) -> str:
             lines.append(f"latency_ms: {session.latency_ms}")
         if session.warning:
             lines.append(f"warning: {session.warning}")
-        usage = _extract_cleanup_usage(session.metadata_json)
+        usage = _extract_correction_usage(session.metadata_json)
         if usage:
             lines.append(
-                "cleanup_usage: "
+                "correction_usage: "
                 f"prompt={usage.get('prompt_tokens', '?')} "
                 f"completion={usage.get('completion_tokens', '?')} "
                 f"total={usage.get('total_tokens', '?')}"
@@ -169,14 +169,16 @@ def format_completed_sessions(sessions: list[HistorySession]) -> str:
     return "\n\n".join(blocks)
 
 
-def _extract_cleanup_usage(metadata_json: str) -> dict[str, int]:
+def _extract_correction_usage(metadata_json: str) -> dict[str, int]:
     try:
         metadata = json.loads(metadata_json)
     except JSONDecodeError:
         return {}
     if not isinstance(metadata, dict):
         return {}
-    usage = metadata.get("cleanup_usage")
+    usage = metadata.get("correction_usage")
+    if not isinstance(usage, dict):
+        usage = metadata.get("cleanup_usage")
     if not isinstance(usage, dict):
         return {}
     normalized = {}

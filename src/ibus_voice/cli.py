@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 from ibus_voice.audio import PyAudioRecorder
-from ibus_voice.cleanup import build_cleaner
+from ibus_voice.correction import build_corrector
 from ibus_voice.config import load_config, load_history_path
 from ibus_voice.engine import VoiceEngine
 from ibus_voice.history import DEFAULT_HISTORY_PATH, SQLiteSessionHistory, format_completed_sessions
@@ -45,21 +45,21 @@ def main(argv: list[str] | None = None) -> int:
             return 1
     config = load_config(args.config)
     provider = build_provider(config.provider)
-    cleaner = build_cleaner(config.cleanup)
+    corrector = build_corrector(config.correction)
     recorder = PyAudioRecorder(config.audio)
     history = SQLiteSessionHistory(config.history.path)
     engine = VoiceEngine(
         recorder=recorder,
         provider=provider,
         committer=TextCommitter(),
-        cleaner=cleaner,
+        corrector=corrector,
         history=history,
     )
     if args.check:
-        cleanup_status = "enabled" if config.cleanup and config.cleanup.enabled else "disabled"
+        correction_status = "enabled" if config.correction and config.correction.enabled else "disabled"
         print(
             "config ok: "
-            f"provider={config.provider.name} model={config.provider.model} cleanup={cleanup_status}"
+            f"provider={config.provider.name} model={config.provider.model} correction={correction_status}"
         )
         return 0
     service = IBusVoiceService(config=config, voice_engine=engine)

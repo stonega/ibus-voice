@@ -8,7 +8,7 @@
 
 1. Capture microphone audio
 2. Send audio to a speech-to-text backend
-3. Optionally run a text cleanup step on the final transcript
+3. Optionally run a text correction step on the final transcript
 4. Receive partial or final recognition results
 5. Convert results into preedit or committed text
 6. Deliver text to the focused application through IBus
@@ -18,7 +18,7 @@
 - IBus engine or bridge layer
 - Audio capture layer
 - Speech backend adapter
-- Optional text cleanup adapter
+- Optional text correction adapter
 - Configuration layer
 
 ## Design Priorities

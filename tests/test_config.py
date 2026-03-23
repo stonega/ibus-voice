@@ -24,13 +24,13 @@ class ParseConfigTests(unittest.TestCase):
         self.assertEqual(config.audio.sample_rate, 8000)
         self.assertEqual(config.hotkey.modifiers, ("Control", "Shift"))
         self.assertEqual(config.history.path, Path.home() / ".config" / "ibus-voice" / "history.db")
-        self.assertIsNone(config.cleanup)
+        self.assertIsNone(config.correction)
 
     def test_missing_provider_fields_fail(self) -> None:
         with self.assertRaises(ValueError):
             parse_config({"provider": {"name": "openai"}})
 
-    def test_parse_cleanup_config_with_relative_paths(self) -> None:
+    def test_parse_correction_config_with_relative_paths(self) -> None:
         config = parse_config(
             {
                 "provider": {
@@ -38,10 +38,10 @@ class ParseConfigTests(unittest.TestCase):
                     "api_key": "secret",
                     "model": "gpt-4o-transcribe",
                 },
-                "cleanup": {
+                "correction": {
                     "enabled": True,
                     "base_url": "https://api.openai.com/v1",
-                    "api_key": "cleanup-secret",
+                    "api_key": "correction-secret",
                     "model": "gpt-4o-mini",
                     "system_prompt_path": "prompts/system.txt",
                     "user_prompt_path": "prompts/user.txt",
@@ -53,14 +53,14 @@ class ParseConfigTests(unittest.TestCase):
             base_dir=Path("/tmp/ibus-voice-config"),
         )
 
-        self.assertTrue(config.cleanup.enabled)
-        self.assertEqual(config.cleanup.base_url, "https://api.openai.com/v1")
+        self.assertTrue(config.correction.enabled)
+        self.assertEqual(config.correction.base_url, "https://api.openai.com/v1")
         self.assertEqual(
             config.provider.dictionary_path,
             Path("/tmp/ibus-voice-config/dictionary.txt").resolve(),
         )
         self.assertEqual(
-            config.cleanup.dictionary_path,
+            config.correction.dictionary_path,
             Path("/tmp/ibus-voice-config/dictionary.txt").resolve(),
         )
         self.assertEqual(
@@ -68,19 +68,19 @@ class ParseConfigTests(unittest.TestCase):
             Path("/tmp/ibus-voice-config/state/history.db").resolve(),
         )
         self.assertEqual(
-            config.cleanup.history_path,
+            config.correction.history_path,
             Path("/tmp/ibus-voice-config/state/history.db").resolve(),
         )
         self.assertEqual(
-            config.cleanup.system_prompt_path,
+            config.correction.system_prompt_path,
             Path("/tmp/ibus-voice-config/prompts/system.txt").resolve(),
         )
         self.assertEqual(
-            config.cleanup.user_prompt_path,
+            config.correction.user_prompt_path,
             Path("/tmp/ibus-voice-config/prompts/user.txt").resolve(),
         )
 
-    def test_enabled_cleanup_requires_provider_fields(self) -> None:
+    def test_enabled_correction_requires_provider_fields(self) -> None:
         with self.assertRaises(ValueError):
             parse_config(
                 {
@@ -89,11 +89,11 @@ class ParseConfigTests(unittest.TestCase):
                         "api_key": "secret",
                         "model": "gpt-4o-transcribe",
                     },
-                    "cleanup": {"enabled": True, "base_url": "https://api.openai.com/v1"},
+                    "correction": {"enabled": True, "base_url": "https://api.openai.com/v1"},
                 }
             )
 
-    def test_cleanup_history_path_defaults_to_top_level_history_path(self) -> None:
+    def test_correction_history_path_defaults_to_top_level_history_path(self) -> None:
         config = parse_config(
             {
                 "provider": {
@@ -104,10 +104,10 @@ class ParseConfigTests(unittest.TestCase):
                 "history": {
                     "path": "custom-history.db",
                 },
-                "cleanup": {
+                "correction": {
                     "enabled": True,
                     "base_url": "https://api.openai.com/v1",
-                    "api_key": "cleanup-secret",
+                    "api_key": "correction-secret",
                     "model": "gpt-4o-mini",
                 },
             },
@@ -115,6 +115,39 @@ class ParseConfigTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            config.cleanup.history_path,
+            config.correction.history_path,
             Path("/tmp/ibus-voice-config/custom-history.db").resolve(),
         )
+
+    def test_legacy_cleanup_section_is_supported(self) -> None:
+        config = parse_config(
+            {
+                "provider": {
+                    "name": "openai",
+                    "api_key": "secret",
+                    "model": "gpt-4o-transcribe",
+                },
+                "cleanup": {
+                    "enabled": True,
+                    "base_url": "https://api.openai.com/v1",
+                    "api_key": "legacy-secret",
+                    "model": "gpt-4o-mini",
+                },
+            }
+        )
+
+        self.assertTrue(config.correction.enabled)
+
+    def test_cleanup_and_correction_sections_conflict(self) -> None:
+        with self.assertRaises(ValueError):
+            parse_config(
+                {
+                    "provider": {
+                        "name": "openai",
+                        "api_key": "secret",
+                        "model": "gpt-4o-transcribe",
+                    },
+                    "cleanup": {"enabled": False},
+                    "correction": {"enabled": False},
+                }
+            )

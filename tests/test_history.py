@@ -24,7 +24,7 @@ class SQLiteSessionHistoryTests(unittest.TestCase):
                     metadata={"raw_text": "hello world", "language": "en"},
                 ),
                 raw_text="hello world",
-                warning="cleanup: timeout",
+                warning="correction: timeout",
             )
 
             with sqlite3.connect(history_path) as connection:
@@ -40,7 +40,7 @@ class SQLiteSessionHistoryTests(unittest.TestCase):
         self.assertEqual(row[1], "Hello world.")
         self.assertEqual(row[2], "hello world")
         self.assertEqual(row[3], 1200)
-        self.assertEqual(row[4], "cleanup: timeout")
+        self.assertEqual(row[4], "correction: timeout")
         self.assertEqual(
             json.loads(row[5]),
             {"language": "en", "raw_text": "hello world"},
@@ -59,13 +59,13 @@ class SQLiteSessionHistoryTests(unittest.TestCase):
             history.save_completed_session(
                 TranscriptResult(text="second", provider="gemini"),
                 raw_text="second",
-                warning="cleanup: timeout",
+                warning="correction: timeout",
             )
 
             sessions = history.list_completed_sessions(limit=10)
 
         self.assertEqual([session.final_text for session in sessions], ["second", "first"])
-        self.assertEqual(sessions[0].warning, "cleanup: timeout")
+        self.assertEqual(sessions[0].warning, "correction: timeout")
 
     def test_format_completed_sessions_renders_human_readable_output(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -74,7 +74,7 @@ class SQLiteSessionHistoryTests(unittest.TestCase):
             history.save_completed_session(
                 TranscriptResult(text="Hello world.", provider="openai", latency_ms=1200),
                 raw_text="hello world",
-                warning="cleanup: timeout",
+                warning="correction: timeout",
             )
 
             rendered = format_completed_sessions(history.list_completed_sessions(limit=10))
@@ -83,9 +83,9 @@ class SQLiteSessionHistoryTests(unittest.TestCase):
         self.assertIn("final: Hello world.", rendered)
         self.assertIn("raw: hello world", rendered)
         self.assertIn("latency_ms: 1200", rendered)
-        self.assertIn("warning: cleanup: timeout", rendered)
+        self.assertIn("warning: correction: timeout", rendered)
 
-    def test_format_completed_sessions_renders_cleanup_usage(self) -> None:
+    def test_format_completed_sessions_renders_correction_usage(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             history_path = Path(temp_dir) / "history.db"
             history = SQLiteSessionHistory(history_path)
@@ -93,7 +93,7 @@ class SQLiteSessionHistoryTests(unittest.TestCase):
                 TranscriptResult(
                     text="Hello world.",
                     provider="openai",
-                    metadata={"cleanup_usage": {"prompt_tokens": 10, "completion_tokens": 4, "total_tokens": 14}},
+                    metadata={"correction_usage": {"prompt_tokens": 10, "completion_tokens": 4, "total_tokens": 14}},
                 ),
                 raw_text="hello world",
                 warning=None,
@@ -101,4 +101,4 @@ class SQLiteSessionHistoryTests(unittest.TestCase):
 
             rendered = format_completed_sessions(history.list_completed_sessions(limit=10))
 
-        self.assertIn("cleanup_usage: prompt=10 completion=4 total=14", rendered)
+        self.assertIn("correction_usage: prompt=10 completion=4 total=14", rendered)

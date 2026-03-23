@@ -30,3 +30,13 @@ class CleanupFailure(Exception):
 
     def __str__(self) -> str:
         return f"{self.cleaner}: {self.message}"
+
+
+@dataclass(slots=True)
+class CorrectionFailure(Exception):
+    corrector: str
+    message: str
+    retryable: bool = False
+
+    def __str__(self) -> str:
+        return f"{self.corrector}: {self.message}"

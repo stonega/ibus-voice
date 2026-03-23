@@ -4,8 +4,9 @@
 
 - added SQLite-backed session history persistence and a CLI viewer for completed sessions
 - added `dictionary.txt`, `system_prompt.txt`, and `user_prompt.txt` defaults with a cleaner separation between policy and per-session structure
-- added configurable history database paths and aligned cleanup prompt history reads with persisted session history
-- added cleanup token-usage capture when OpenAI-compatible responses return `usage`
+- added configurable history database paths and aligned correction prompt history reads with persisted session history
+- added correction token-usage capture when OpenAI-compatible responses return `usage`
+- renamed the post-ASR stage to `correction` as the primary config and code path while keeping legacy `cleanup` compatibility
 
 ## 0.1.0 - 2026-03-23
 

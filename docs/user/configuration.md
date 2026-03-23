@@ -19,7 +19,7 @@ dictionary_path = "dictionary.txt"
 [history]
 path = "history.db"
 
-[cleanup]
+[correction]
 enabled = false
 base_url = "https://api.openai.com/v1"
 api_key = "replace-me"
@@ -48,15 +48,16 @@ Supported provider defaults:
 - Gemini: `generateContent` with inline audio data
 - if `dictionary.txt` exists, both providers use it to bias transcription toward canonical terms
 
-Cleanup notes:
+Correction notes:
 
-- `cleanup.enabled = false` keeps the current ASR-only behavior
-- `cleanup.base_url` must be an OpenAI-compatible API base such as `https://api.openai.com/v1`
+- `correction.enabled = false` keeps the current ASR-only behavior
+- `correction.base_url` must be an OpenAI-compatible API base such as `https://api.openai.com/v1`
 - `ibus-voice` appends `/chat/completions` internally
 - `dictionary_path`, `system_prompt_path`, and `user_prompt_path` are resolved relative to the config file directory when they are not absolute paths
-- cleanup prompt files are read when a dictation session runs, so prompt edits apply without reinstalling the engine
+- correction prompt files are read when a dictation session runs, so prompt edits apply without reinstalling the engine
 - `user_prompt.txt` supports `{transcript}`, `{history}`, and `{dictionary}`
-- if cleanup fails, `ibus-voice` falls back to the raw transcript instead of failing the whole dictation session
+- if correction fails, `ibus-voice` falls back to the raw transcript instead of failing the whole dictation session
+- legacy `[cleanup]` config is still accepted for compatibility, but new configs should use `[correction]`
 
 Prompt authoring notes:
 
@@ -72,9 +73,9 @@ History notes:
 - when omitted, the default history path is `~/.config/ibus-voice/history.db`
 - the history database is created automatically on startup
 - a session row stores the provider, final text, raw text, latency, warning, and serialized metadata
-- `history.db` is also available to cleanup prompts through the `{history}` placeholder
-- cleanup usage tokens are stored in session metadata when the cleanup provider returns `usage`
-- `ibus-voice.cli --history` prints human-readable history records and includes cleanup token usage when available
+- `history.db` is also available to correction prompts through the `{history}` placeholder
+- correction usage tokens are stored in session metadata when the correction provider returns `usage`
+- `ibus-voice.cli --history` prints human-readable history records and includes correction token usage when available
 
 Hotkey notes:
 

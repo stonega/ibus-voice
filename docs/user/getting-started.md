@@ -5,7 +5,7 @@
 System install for GNOME and normal desktop use:
 
 1. Review and edit `examples/config.toml` or let the installer copy it to `~/.config/ibus-voice/config.toml`
-   If you want transcript cleanup, also copy the example prompt files into `~/.config/ibus-voice/`.
+   If you want transcript correction, also copy the example prompt files into `~/.config/ibus-voice/`.
 2. Run:
 
 ```bash
@@ -48,6 +48,6 @@ Package builds:
 
 `build-deb.sh` requires `dpkg-deb`. `build-rpm.sh` requires `rpmbuild`.
 
-With cleanup disabled, `ibus-voice` commits the raw speech-to-text result.
+With correction disabled, `ibus-voice` commits the raw speech-to-text result.
 
-With cleanup enabled, it sends the transcript to an OpenAI-compatible text model and commits the cleaned result. If that second step fails, the raw transcript is still committed.
+With correction enabled, it sends the transcript to an OpenAI-compatible text model and commits the corrected result. If that second step fails, the raw transcript is still committed.
