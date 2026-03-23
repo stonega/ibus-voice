@@ -70,8 +70,10 @@ If you are building this project, useful implementation areas will likely includ
 - a push-to-talk engine state machine
 - PyAudio-based recorder integration
 - OpenAI and Gemini provider adapters
-- optional OpenAI-compatible cleanup after transcription
+- dictionary-aware OpenAI and Gemini transcription prompting
+- optional OpenAI-compatible cleanup after transcription with transcript history context
 - an IBus engine registration and hotkey handling layer
+- SQLite history for completed sessions at `~/.config/ibus-voice/history.db`
 - local and system install scripts
 - Debian and RPM packaging scripts
 - unit tests for core behavior
@@ -118,7 +120,7 @@ If cleanup is configured and enabled, `ibus-voice` will:
 
 If the cleanup step is disabled or fails, the raw transcript is still committed.
 
-Example cleanup prompts are provided in `examples/cleanup-system-prompt.txt` and `examples/cleanup-user-prompt.txt`.
+Example prompt files are provided in `examples/system_prompt.txt`, `examples/user_prompt.txt`, and `examples/dictionary.txt`.
 
 Print IBus engine metadata XML with:
 

@@ -42,8 +42,9 @@ cp -R "${ROOT_DIR}/src" "${SOURCE_DIR}/src"
 cp "${ROOT_DIR}/README.md" "${SOURCE_DIR}/README.md"
 cp "${ROOT_DIR}/LICENSE" "${SOURCE_DIR}/LICENSE"
 cp "${ROOT_DIR}/examples/config.toml" "${SOURCE_DIR}/examples/config.toml"
-cp "${ROOT_DIR}/examples/cleanup-system-prompt.txt" "${SOURCE_DIR}/examples/cleanup-system-prompt.txt"
-cp "${ROOT_DIR}/examples/cleanup-user-prompt.txt" "${SOURCE_DIR}/examples/cleanup-user-prompt.txt"
+cp "${ROOT_DIR}/examples/dictionary.txt" "${SOURCE_DIR}/examples/dictionary.txt"
+cp "${ROOT_DIR}/examples/system_prompt.txt" "${SOURCE_DIR}/examples/system_prompt.txt"
+cp "${ROOT_DIR}/examples/user_prompt.txt" "${SOURCE_DIR}/examples/user_prompt.txt"
 
 cat > "${SOURCE_DIR}/ibus-engine-voice" <<'EOF'
 #!/usr/bin/env bash
@@ -88,16 +89,18 @@ cp LICENSE %{buildroot}/usr/lib/ibus-voice/
 cp ibus-engine-voice %{buildroot}/usr/bin/ibus-engine-voice
 cp ibus-voice.xml %{buildroot}/usr/share/ibus/component/ibus-voice.xml
 cp examples/config.toml %{buildroot}/usr/share/doc/%{name}/examples/config.toml
-cp examples/cleanup-system-prompt.txt %{buildroot}/usr/share/doc/%{name}/examples/cleanup-system-prompt.txt
-cp examples/cleanup-user-prompt.txt %{buildroot}/usr/share/doc/%{name}/examples/cleanup-user-prompt.txt
+cp examples/dictionary.txt %{buildroot}/usr/share/doc/%{name}/examples/dictionary.txt
+cp examples/system_prompt.txt %{buildroot}/usr/share/doc/%{name}/examples/system_prompt.txt
+cp examples/user_prompt.txt %{buildroot}/usr/share/doc/%{name}/examples/user_prompt.txt
 
 %files
 /usr/lib/ibus-voice
 /usr/bin/ibus-engine-voice
 /usr/share/ibus/component/ibus-voice.xml
 /usr/share/doc/%{name}/examples/config.toml
-/usr/share/doc/%{name}/examples/cleanup-system-prompt.txt
-/usr/share/doc/%{name}/examples/cleanup-user-prompt.txt
+/usr/share/doc/%{name}/examples/dictionary.txt
+/usr/share/doc/%{name}/examples/system_prompt.txt
+/usr/share/doc/%{name}/examples/user_prompt.txt
 
 %changelog
 * ${RPM_CHANGELOG_DATE} ibus-voice contributors - ${VERSION}-1

@@ -52,6 +52,18 @@ class ParseConfigTests(unittest.TestCase):
         self.assertTrue(config.cleanup.enabled)
         self.assertEqual(config.cleanup.base_url, "https://api.openai.com/v1")
         self.assertEqual(
+            config.provider.dictionary_path,
+            Path("/tmp/ibus-voice-config/dictionary.txt").resolve(),
+        )
+        self.assertEqual(
+            config.cleanup.dictionary_path,
+            Path("/tmp/ibus-voice-config/dictionary.txt").resolve(),
+        )
+        self.assertEqual(
+            config.cleanup.history_path,
+            Path("/tmp/ibus-voice-config/history.db").resolve(),
+        )
+        self.assertEqual(
             config.cleanup.system_prompt_path,
             Path("/tmp/ibus-voice-config/prompts/system.txt").resolve(),
         )

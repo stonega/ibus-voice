@@ -1,3 +1,0 @@
-Clean this speech transcript and return plain text only:
-
-{transcript}

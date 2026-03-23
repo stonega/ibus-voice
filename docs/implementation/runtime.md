@@ -7,6 +7,7 @@
 - `audio.py`: recorder abstractions, PCM capture, and WAV payload encoding
 - `cleanup.py`: optional OpenAI-compatible transcript cleanup
 - `engine.py`: state machine for push-to-talk dictation
+- `history.py`: SQLite persistence for completed dictation sessions
 - `providers/`: normalized speech backend adapters
 - `ibus_service.py`: IBus engine registration, hotkey matching, and commit boundary
 
@@ -17,9 +18,12 @@
 - IBus auxiliary text shows `Listening...` while push-to-talk is held
 - recording stops on release
 - audio is sent to the selected provider
+- if `dictionary.txt` exists, provider-specific ASR prompts bias transcription toward canonical terms
 - if configured, the raw transcript is sent to a cleanup model before commit
+- cleanup templates can use transcript text, recent session history, and dictionary content
 - cleanup failures fall back to the raw transcript
 - only final text is committed
+- successful committed sessions are appended to `~/.config/ibus-voice/history.db`
 - OpenAI receives multipart file uploads
 - Gemini receives inline audio data through `generateContent`
 

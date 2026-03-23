@@ -38,8 +38,13 @@ class CleanupTests(unittest.TestCase):
             base = Path(tmpdir)
             system_prompt = base / "system.txt"
             user_prompt = base / "user.txt"
+            dictionary = base / "dictionary.txt"
             system_prompt.write_text("Fix text.", encoding="utf-8")
-            user_prompt.write_text("Transcript: {transcript}", encoding="utf-8")
+            user_prompt.write_text(
+                "Transcript: {transcript}\nDictionary: {dictionary}\nHistory: {history}",
+                encoding="utf-8",
+            )
+            dictionary.write_text("OpenAI\nIBus", encoding="utf-8")
             transport = FakeTransport(
                 {"choices": [{"message": {"content": " Cleaned transcript. "}}]}
             )
@@ -50,6 +55,8 @@ class CleanupTests(unittest.TestCase):
                     api_key="secret",
                     model="gpt-4o-mini",
                     timeout_seconds=5.0,
+                    dictionary_path=dictionary,
+                    history_path=base / "history.db",
                     system_prompt_path=system_prompt,
                     user_prompt_path=user_prompt,
                 ),
@@ -62,7 +69,7 @@ class CleanupTests(unittest.TestCase):
         self.assertEqual(transport.last_request["url"], "https://api.openai.com/v1/chat/completions")
         self.assertEqual(
             transport.last_request["payload"]["messages"][1]["content"],
-            "Transcript: hello world",
+            "Transcript: hello world\nDictionary: OpenAI\nIBus\nHistory: ",
         )
 
     def test_openai_cleaner_rejects_empty_content(self) -> None:
@@ -78,6 +85,7 @@ class CleanupTests(unittest.TestCase):
                     base_url="https://api.openai.com/v1",
                     api_key="secret",
                     model="gpt-4o-mini",
+                    history_path=base / "history.db",
                     system_prompt_path=system_prompt,
                     user_prompt_path=user_prompt,
                 ),
@@ -100,6 +108,7 @@ class CleanupTests(unittest.TestCase):
                     base_url="https://api.openai.com/v1",
                     api_key="secret",
                     model="gpt-4o-mini",
+                    history_path=base / "history.db",
                     system_prompt_path=system_prompt,
                     user_prompt_path=user_prompt,
                 ),
@@ -108,3 +117,46 @@ class CleanupTests(unittest.TestCase):
 
             with self.assertRaises(CleanupFailure):
                 cleaner.clean("hello world")
+
+    def test_openai_cleaner_supports_history_and_dictionary_placeholders(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = Path(tmpdir)
+            system_prompt = base / "system.txt"
+            user_prompt = base / "user.txt"
+            dictionary = base / "dictionary.txt"
+            history_db = base / "history.db"
+            system_prompt.write_text("Fix text.", encoding="utf-8")
+            user_prompt.write_text("{dictionary}\n---\n{history}\n---\n{transcript}", encoding="utf-8")
+            dictionary.write_text("IBus\nOpenAI", encoding="utf-8")
+
+            from ibus_voice.history import SQLiteSessionHistory
+            from ibus_voice.types import TranscriptResult
+
+            history = SQLiteSessionHistory(history_db)
+            history.save_completed_session(
+                TranscriptResult(text="older text", provider="openai"),
+                raw_text="older text",
+                warning=None,
+            )
+
+            transport = FakeTransport({"choices": [{"message": {"content": " clean "}}]})
+            cleaner = OpenAICompatibleCleaner(
+                config=CleanupConfig(
+                    enabled=True,
+                    base_url="https://api.openai.com/v1",
+                    api_key="secret",
+                    model="gpt-4o-mini",
+                    dictionary_path=dictionary,
+                    history_path=history_db,
+                    system_prompt_path=system_prompt,
+                    user_prompt_path=user_prompt,
+                ),
+                transport=transport,
+            )
+
+            cleaner.clean("latest text")
+
+        content = transport.last_request["payload"]["messages"][1]["content"]
+        self.assertIn("IBus\nOpenAI", content)
+        self.assertIn("openai: older text", content)
+        self.assertTrue(content.endswith("---\nlatest text"))

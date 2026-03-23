@@ -14,6 +14,7 @@ name = "openai"
 api_key = "replace-me"
 model = "gpt-4o-transcribe"
 timeout_seconds = 30
+dictionary_path = "dictionary.txt"
 
 [cleanup]
 enabled = false
@@ -21,8 +22,10 @@ base_url = "https://api.openai.com/v1"
 api_key = "replace-me"
 model = "gpt-4o-mini"
 timeout_seconds = 8
-system_prompt_path = "cleanup-system-prompt.txt"
-user_prompt_path = "cleanup-user-prompt.txt"
+dictionary_path = "dictionary.txt"
+history_path = "history.db"
+system_prompt_path = "system_prompt.txt"
+user_prompt_path = "user_prompt.txt"
 
 [audio]
 sample_rate = 16000
@@ -41,15 +44,24 @@ Supported provider defaults:
 
 - OpenAI: transcription endpoint using multipart audio upload
 - Gemini: `generateContent` with inline audio data
+- if `dictionary.txt` exists, both providers use it to bias transcription toward canonical terms
 
 Cleanup notes:
 
 - `cleanup.enabled = false` keeps the current ASR-only behavior
 - `cleanup.base_url` must be an OpenAI-compatible API base such as `https://api.openai.com/v1`
 - `ibus-voice` appends `/chat/completions` internally
-- `system_prompt_path` and `user_prompt_path` are resolved relative to the config file directory when they are not absolute paths
+- `dictionary_path`, `history_path`, `system_prompt_path`, and `user_prompt_path` are resolved relative to the config file directory when they are not absolute paths
 - cleanup prompt files are read when a dictation session runs, so prompt edits apply without reinstalling the engine
+- `user_prompt.txt` supports `{transcript}`, `{history}`, and `{dictionary}`
 - if cleanup fails, `ibus-voice` falls back to the raw transcript instead of failing the whole dictation session
+
+History notes:
+
+- completed dictation sessions are stored in `~/.config/ibus-voice/history.db`
+- the history database is created automatically on startup
+- a session row stores the provider, final text, raw text, latency, warning, and serialized metadata
+- `history.db` is also available to cleanup prompts through the `{history}` placeholder
 
 Hotkey notes:
 
@@ -61,7 +73,7 @@ Installer behavior:
 - `scripts/install-local.sh` installs a local launcher at `~/.local/bin/ibus-engine-voice`
 - the IBus component XML is installed at `~/.local/share/ibus-voice/component/ibus-voice.xml`
 - the default config is copied to `~/.config/ibus-voice/config.toml` if it does not already exist
-- example cleanup prompt files should be copied manually if you enable cleanup
+- example `dictionary.txt`, `system_prompt.txt`, and `user_prompt.txt` should be copied into `~/.config/ibus-voice/`
 
 System installer behavior:
 

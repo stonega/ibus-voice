@@ -1,0 +1,4 @@
+IBus
+OpenAI
+Gemini
+ibus-voice

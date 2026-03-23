@@ -8,6 +8,7 @@ from ibus_voice.audio import PyAudioRecorder
 from ibus_voice.cleanup import build_cleaner
 from ibus_voice.config import load_config
 from ibus_voice.engine import VoiceEngine
+from ibus_voice.history import SQLiteSessionHistory
 from ibus_voice.ibus_service import IBusVoiceService, TextCommitter
 from ibus_voice.metadata import render_engines_xml
 from ibus_voice.providers import build_provider
@@ -29,7 +30,14 @@ def main(argv: list[str] | None = None) -> int:
     provider = build_provider(config.provider)
     cleaner = build_cleaner(config.cleanup)
     recorder = PyAudioRecorder(config.audio)
-    engine = VoiceEngine(recorder=recorder, provider=provider, committer=TextCommitter(), cleaner=cleaner)
+    history = SQLiteSessionHistory()
+    engine = VoiceEngine(
+        recorder=recorder,
+        provider=provider,
+        committer=TextCommitter(),
+        cleaner=cleaner,
+        history=history,
+    )
     if args.check:
         cleanup_status = "enabled" if config.cleanup and config.cleanup.enabled else "disabled"
         print(

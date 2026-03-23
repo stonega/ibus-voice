@@ -30,6 +30,9 @@ class OpenAIProvider:
             "model": self.config.model,
             "response_format": "json",
         }
+        prompt = _build_transcription_prompt(self.config.dictionary_path)
+        if prompt:
+            fields["prompt"] = prompt
         headers = {"Authorization": f"Bearer {self.config.api_key}"}
         url = self.config.endpoint or DEFAULT_ENDPOINT
         try:
@@ -51,3 +54,15 @@ class OpenAIProvider:
             latency_ms=int((monotonic() - started) * 1000),
             metadata={"model": self.config.model},
         )
+
+
+def _build_transcription_prompt(dictionary_path) -> str:
+    if dictionary_path is None:
+        return ""
+    try:
+        dictionary = dictionary_path.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        return ""
+    if not dictionary:
+        return ""
+    return f"Prefer these canonical terms when transcribing:\n{dictionary}"

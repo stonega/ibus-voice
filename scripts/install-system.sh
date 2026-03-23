@@ -25,6 +25,15 @@ cp "${ROOT_DIR}/LICENSE" "${APP_DIR}/LICENSE"
 if [[ ! -f "${CONFIG_DIR}/config.toml" ]]; then
   cp "${ROOT_DIR}/examples/config.toml" "${CONFIG_DIR}/config.toml"
 fi
+if [[ ! -f "${CONFIG_DIR}/dictionary.txt" ]]; then
+  cp "${ROOT_DIR}/examples/dictionary.txt" "${CONFIG_DIR}/dictionary.txt"
+fi
+if [[ ! -f "${CONFIG_DIR}/system_prompt.txt" ]]; then
+  cp "${ROOT_DIR}/examples/system_prompt.txt" "${CONFIG_DIR}/system_prompt.txt"
+fi
+if [[ ! -f "${CONFIG_DIR}/user_prompt.txt" ]]; then
+  cp "${ROOT_DIR}/examples/user_prompt.txt" "${CONFIG_DIR}/user_prompt.txt"
+fi
 
 cat > "${LAUNCHER_PATH}" <<EOF
 #!/usr/bin/env bash
@@ -47,6 +56,9 @@ Files:
 - component: ${COMPONENT_PATH}
 - app: ${APP_DIR}
 - config: ${CONFIG_DIR}/config.toml
+- dictionary: ${CONFIG_DIR}/dictionary.txt
+- system prompt: ${CONFIG_DIR}/system_prompt.txt
+- user prompt: ${CONFIG_DIR}/user_prompt.txt
 
 Next steps:
 1. Run: ibus restart

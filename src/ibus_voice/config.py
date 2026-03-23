@@ -17,6 +17,7 @@ class ProviderConfig:
     model: str
     endpoint: str | None = None
     timeout_seconds: float = 30.0
+    dictionary_path: Path | None = None
 
 
 @dataclass(slots=True)
@@ -41,6 +42,8 @@ class CleanupConfig:
     api_key: str = ""
     model: str = ""
     timeout_seconds: float = 8.0
+    dictionary_path: Path | None = None
+    history_path: Path | None = None
     system_prompt_path: Path | None = None
     user_prompt_path: Path | None = None
 
@@ -77,6 +80,7 @@ def parse_config(raw: dict, *, base_dir: Path | None = None) -> AppConfig:
         model=str(model),
         endpoint=_optional_str(provider_section.get("endpoint")),
         timeout_seconds=float(provider_section.get("timeout_seconds", 30.0)),
+        dictionary_path=_resolve_optional_path(provider_section.get("dictionary_path", "dictionary.txt"), base_dir or DEFAULT_CONFIG_DIR),
     )
     audio = AudioConfig(
         sample_rate=int(audio_section.get("sample_rate", 16_000)),
@@ -115,6 +119,8 @@ def _parse_cleanup_config(raw: object, *, base_dir: Path) -> CleanupConfig | Non
         api_key=api_key,
         model=model,
         timeout_seconds=float(raw.get("timeout_seconds", 8.0)),
+        dictionary_path=_resolve_optional_path(raw.get("dictionary_path", "dictionary.txt"), base_dir),
+        history_path=_resolve_optional_path(raw.get("history_path", "history.db"), base_dir),
         system_prompt_path=_resolve_optional_path(raw.get("system_prompt_path", "system_prompt.txt"), base_dir),
         user_prompt_path=_resolve_optional_path(raw.get("user_prompt_path", "user_prompt.txt"), base_dir),
     )

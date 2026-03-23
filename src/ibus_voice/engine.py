@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from ibus_voice.audio import AudioPayload, Recorder
+from ibus_voice.history import SessionHistory
 from ibus_voice.types import CleanupFailure, ProviderFailure, TranscriptResult
 
 
@@ -25,6 +26,7 @@ class VoiceEngine:
     provider: SpeechProvider
     committer: Committer
     cleaner: TextCleaner
+    history: SessionHistory | None = None
     state: str = "idle"
     last_error: str | None = None
     last_warning: str | None = None
@@ -74,6 +76,7 @@ class VoiceEngine:
                 latency_ms=result.latency_ms,
                 metadata={**result.metadata, "raw_text": result.text},
             )
+            self._save_history(self.last_result, raw_text=result.text)
             self.events.append("text_committed")
         self.state = "idle"
         self.events.append("ready")
@@ -81,3 +84,17 @@ class VoiceEngine:
     def _reset_after_error(self) -> None:
         self.state = "idle"
         self.events.append("ready")
+
+    def _save_history(self, result: TranscriptResult, *, raw_text: str) -> None:
+        if self.history is None:
+            return
+        try:
+            self.history.save_completed_session(
+                result,
+                raw_text=raw_text,
+                warning=self.last_warning,
+            )
+        except Exception as exc:
+            if self.last_warning is None:
+                self.last_warning = f"history: {exc}"
+            self.events.append("history_save_failed")

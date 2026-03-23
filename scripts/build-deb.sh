@@ -37,8 +37,9 @@ cp -R "${ROOT_DIR}/src" "${PACKAGE_ROOT}/usr/lib/ibus-voice/"
 cp "${ROOT_DIR}/README.md" "${PACKAGE_ROOT}/usr/lib/ibus-voice/"
 cp "${ROOT_DIR}/LICENSE" "${PACKAGE_ROOT}/usr/lib/ibus-voice/"
 cp "${ROOT_DIR}/examples/config.toml" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/config.toml"
-cp "${ROOT_DIR}/examples/cleanup-system-prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/cleanup-system-prompt.txt"
-cp "${ROOT_DIR}/examples/cleanup-user-prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/cleanup-user-prompt.txt"
+cp "${ROOT_DIR}/examples/dictionary.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/dictionary.txt"
+cp "${ROOT_DIR}/examples/system_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/system_prompt.txt"
+cp "${ROOT_DIR}/examples/user_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/user_prompt.txt"
 
 cat > "${PACKAGE_ROOT}/usr/bin/ibus-engine-voice" <<'EOF'
 #!/usr/bin/env bash

@@ -27,11 +27,12 @@ class GeminiProvider:
         if not audio.data:
             raise ProviderFailure(self.name, "audio payload is empty")
         started = monotonic()
+        prompt = _build_transcription_prompt(self.config.dictionary_path)
         payload = {
             "contents": [
                 {
                     "parts": [
-                        {"text": "Transcribe this audio and return plain text only."},
+                        {"text": prompt},
                         {
                             "inlineData": {
                                 "mimeType": audio.mime_type,
@@ -68,3 +69,16 @@ def _extract_text(response: dict) -> str:
             if text:
                 return str(text)
     return ""
+
+
+def _build_transcription_prompt(dictionary_path) -> str:
+    prompt = "Transcribe this audio and return plain text only."
+    if dictionary_path is None:
+        return prompt
+    try:
+        dictionary = dictionary_path.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        return prompt
+    if not dictionary:
+        return prompt
+    return f"{prompt}\nPrefer these canonical terms when relevant:\n{dictionary}"

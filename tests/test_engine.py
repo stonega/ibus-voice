@@ -42,6 +42,29 @@ class StubCleaner:
         return self.text
 
 
+class StubHistory:
+    def __init__(self, failure: Exception | None = None) -> None:
+        self.failure = failure
+        self.saved: list[dict[str, object]] = []
+
+    def save_completed_session(
+        self,
+        result: TranscriptResult,
+        *,
+        raw_text: str,
+        warning: str | None,
+    ) -> None:
+        if self.failure is not None:
+            raise self.failure
+        self.saved.append(
+            {
+                "result": result,
+                "raw_text": raw_text,
+                "warning": warning,
+            }
+        )
+
+
 class VoiceEngineTests(unittest.TestCase):
     def test_press_release_commits_result(self) -> None:
         recorder = MemoryRecorder()
@@ -118,3 +141,40 @@ class VoiceEngineTests(unittest.TestCase):
         self.assertEqual(engine.committer.values, ["hello world"])  # type: ignore[attr-defined]
         self.assertEqual(engine.last_warning, "cleanup: timeout")
         self.assertIn("cleanup_failed_fallback", engine.events)
+
+    def test_completed_session_is_saved_to_history(self) -> None:
+        history = StubHistory()
+        engine = VoiceEngine(
+            recorder=MemoryRecorder(),
+            provider=StubProvider(TranscriptResult(text="hello world", provider="stub", latency_ms=42)),
+            committer=StubCommitter(),
+            cleaner=StubCleaner(text="Hello world."),
+            history=history,
+        )
+
+        engine.handle_press()
+        engine.recorder.push(b"voice")  # type: ignore[attr-defined]
+        engine.handle_release()
+
+        self.assertEqual(len(history.saved), 1)
+        saved = history.saved[0]
+        self.assertEqual(saved["raw_text"], "hello world")
+        self.assertEqual(saved["warning"], None)
+        self.assertEqual(saved["result"].text, "Hello world.")  # type: ignore[union-attr]
+
+    def test_history_failure_does_not_break_commit(self) -> None:
+        engine = VoiceEngine(
+            recorder=MemoryRecorder(),
+            provider=StubProvider(TranscriptResult(text="hello world", provider="stub")),
+            committer=StubCommitter(),
+            cleaner=StubCleaner(),
+            history=StubHistory(failure=RuntimeError("database is locked")),
+        )
+
+        engine.handle_press()
+        engine.recorder.push(b"voice")  # type: ignore[attr-defined]
+        engine.handle_release()
+
+        self.assertEqual(engine.committer.values, ["hello world"])  # type: ignore[attr-defined]
+        self.assertEqual(engine.last_warning, "history: database is locked")
+        self.assertIn("history_save_failed", engine.events)

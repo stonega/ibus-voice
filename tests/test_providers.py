@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import unittest
+import tempfile
+from pathlib import Path
 
 from ibus_voice.audio import AudioPayload
 from ibus_voice.config import ProviderConfig
@@ -63,6 +65,20 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(provider.transport.last_request["kind"], "multipart")
         self.assertEqual(provider.transport.last_request["fields"]["model"], "m")
 
+    def test_openai_uses_dictionary_as_transcription_prompt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dictionary = Path(tmpdir) / "dictionary.txt"
+            dictionary.write_text("IBus\nOpenAI", encoding="utf-8")
+            provider = OpenAIProvider(
+                config=ProviderConfig(name="openai", api_key="x", model="m", dictionary_path=dictionary),
+                transport=FakeTransport({"text": " hello "}),
+            )
+
+            provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
+
+        self.assertIn("Prefer these canonical terms", provider.transport.last_request["fields"]["prompt"])
+        self.assertIn("IBus\nOpenAI", provider.transport.last_request["fields"]["prompt"])
+
     def test_gemini_extracts_candidate_text(self) -> None:
         provider = GeminiProvider(
             config=ProviderConfig(name="gemini", api_key="x", model="m"),
@@ -80,6 +96,27 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(result.text, "transcript")
         self.assertEqual(result.provider, "gemini")
         self.assertEqual(provider.transport.last_request["kind"], "json")
+
+    def test_gemini_uses_dictionary_in_transcription_prompt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dictionary = Path(tmpdir) / "dictionary.txt"
+            dictionary.write_text("IBus\nOpenAI", encoding="utf-8")
+            provider = GeminiProvider(
+                config=ProviderConfig(name="gemini", api_key="x", model="m", dictionary_path=dictionary),
+                transport=FakeTransport(
+                    {
+                        "candidates": [
+                            {"content": {"parts": [{"text": " transcript "}]}},
+                        ]
+                    }
+                ),
+            )
+
+            provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
+
+        prompt = provider.transport.last_request["payload"]["contents"][0]["parts"][0]["text"]
+        self.assertIn("Prefer these canonical terms", prompt)
+        self.assertIn("IBus\nOpenAI", prompt)
 
     def test_provider_factory_rejects_unknown_provider(self) -> None:
         with self.assertRaises(ProviderFailure):

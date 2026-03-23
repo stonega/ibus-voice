@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Protocol
 
 from ibus_voice.config import CleanupConfig
+from ibus_voice.history import render_recent_history
 from ibus_voice.providers.http import HttpTransport, UrllibTransport
 from ibus_voice.types import CleanupFailure
 
@@ -36,7 +37,7 @@ class OpenAICompatibleCleaner:
         if not transcript.strip():
             return transcript
         system_prompt = _read_prompt_file(self.config.system_prompt_path)
-        user_prompt = _render_user_prompt(self.config.user_prompt_path, transcript)
+        user_prompt = _render_user_prompt(self.config, transcript)
         payload = {
             "model": self.config.model,
             "temperature": 0,
@@ -81,10 +82,16 @@ def _extract_message_text(response: dict) -> str:
     return ""
 
 
-def _render_user_prompt(path: Path | None, transcript: str) -> str:
-    template = _read_prompt_file(path)
+def _render_user_prompt(config: CleanupConfig, transcript: str) -> str:
+    template = _read_prompt_file(config.user_prompt_path)
+    dictionary = _read_optional_text_file(config.dictionary_path)
+    history = render_recent_history(config.history_path)
     try:
-        return template.format(transcript=transcript)
+        return template.format(
+            transcript=transcript,
+            dictionary=dictionary,
+            history=history,
+        )
     except KeyError as exc:
         raise CleanupFailure("cleanup", f"unsupported prompt placeholder: {exc.args[0]}") from exc
 
@@ -94,5 +101,16 @@ def _read_prompt_file(path: Path | None) -> str:
         raise CleanupFailure("cleanup", "prompt path is not configured")
     try:
         return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise CleanupFailure("cleanup", f"failed to read prompt file: {path}") from exc
+
+
+def _read_optional_text_file(path: Path | None) -> str:
+    if path is None:
+        return ""
+    try:
+        return path.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        return ""
     except OSError as exc:
         raise CleanupFailure("cleanup", f"failed to read prompt file: {path}") from exc
