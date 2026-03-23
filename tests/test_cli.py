@@ -9,10 +9,22 @@ from unittest.mock import patch
 
 from ibus_voice.cli import main
 from ibus_voice.history import SQLiteSessionHistory
+from ibus_voice.metadata import ISSUES, REPOSITORY, VERSION
 from ibus_voice.types import TranscriptResult
 
 
 class CLITests(unittest.TestCase):
+    def test_version_command_prints_version_creator_and_github_links(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output):
+            exit_code = main(["--version"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(
+            output.getvalue(),
+            f"version: {VERSION}\ncreated by: Stone\nrepository: {REPOSITORY}\nissues: {ISSUES}\n",
+        )
+
     def test_history_command_prints_completed_sessions(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             history_path = Path(temp_dir) / "history.db"

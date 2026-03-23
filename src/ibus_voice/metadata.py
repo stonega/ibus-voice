@@ -10,6 +10,8 @@ COMPONENT_NAME = "org.freedesktop.IBus.ibus_voice"
 VERSION = __version__
 AUTHOR = "ibus-voice contributors"
 HOMEPAGE = "https://github.com/stonega/ibus-voice"
+REPOSITORY = HOMEPAGE
+ISSUES = f"{HOMEPAGE}/issues"
 LICENSE = "MIT"
 ENGINE_NAME = "ibus-voice"
 ENGINE_LONGNAME = "ibus-voice"
@@ -19,6 +21,7 @@ ENGINE_LAYOUT = "default"
 ENGINE_ICON = "audio-input-microphone"
 ENGINE_SYMBOL = "V"
 TEXTDOMAIN = "ibus-voice"
+CLI_AUTHOR = "Stone"
 
 
 def render_engines_xml() -> str:
@@ -59,3 +62,12 @@ def render_component_xml(exec_path: str) -> str:
   <engines exec='{exec_escaped} --xml'/>
 </component>
 """
+
+
+def render_version_text() -> str:
+    return (
+        f"version: {VERSION}\n"
+        f"created by: {CLI_AUTHOR}\n"
+        f"repository: {REPOSITORY}\n"
+        f"issues: {ISSUES}"
+    )

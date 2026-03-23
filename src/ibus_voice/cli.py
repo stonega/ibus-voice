@@ -11,7 +11,7 @@ from ibus_voice.config import load_config, load_history_path
 from ibus_voice.engine import VoiceEngine
 from ibus_voice.history import DEFAULT_HISTORY_PATH, SQLiteSessionHistory, format_completed_sessions
 from ibus_voice.ibus_service import IBusVoiceService, TextCommitter
-from ibus_voice.metadata import render_engines_xml
+from ibus_voice.metadata import render_engines_xml, render_version_text
 from ibus_voice.providers import build_provider
 
 
@@ -21,6 +21,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--check", action="store_true", help="Validate config and dependencies")
     parser.add_argument("--ibus", action="store_true", help="Run as an IBus engine process")
     parser.add_argument("--xml", action="store_true", help="Print IBus engine XML")
+    parser.add_argument("--version", action="store_true", help="Print CLI version information")
     parser.add_argument("--history", action="store_true", help="Print completed session history")
     parser.add_argument("--history-limit", type=int, default=20, help="Number of history records to print")
     parser.add_argument("--history-path", help="Path to history.db")
@@ -29,6 +30,9 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     if args.xml:
         print(render_engines_xml(), end="")
+        return 0
+    if args.version:
+        print(render_version_text())
         return 0
     if args.history:
         history_path = Path(args.history_path).expanduser() if args.history_path else None
