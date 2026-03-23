@@ -56,6 +56,14 @@ Cleanup notes:
 - `user_prompt.txt` supports `{transcript}`, `{history}`, and `{dictionary}`
 - if cleanup fails, `ibus-voice` falls back to the raw transcript instead of failing the whole dictation session
 
+Prompt authoring notes:
+
+- put stable correction policy in `system_prompt.txt`
+- use `system_prompt.txt` for long-term context such as your domain, terminology, punctuation preferences, and casing rules
+- keep `user_prompt.txt` mostly structural; it should usually just arrange the transcript, history, and dictionary blocks
+- keep long term names and preferred spellings in `dictionary.txt` instead of turning `system_prompt.txt` into a term list
+- the default `system_prompt.txt` assumes the output is inserted directly at the cursor, so it forbids chatty responses and markdown
+
 History notes:
 
 - completed dictation sessions are stored in `~/.config/ibus-voice/history.db`

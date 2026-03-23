@@ -120,7 +120,7 @@ If cleanup is configured and enabled, `ibus-voice` will:
 
 If the cleanup step is disabled or fails, the raw transcript is still committed.
 
-Example prompt files are provided in `examples/system_prompt.txt`, `examples/user_prompt.txt`, and `examples/dictionary.txt`.
+Example prompt files are provided in `examples/system_prompt.txt`, `examples/user_prompt.txt`, and `examples/dictionary.txt`. The intended split is simple: `system_prompt.txt` carries stable correction policy, `user_prompt.txt` stays structural, and `dictionary.txt` holds canonical terms.
 
 Print IBus engine metadata XML with:
 

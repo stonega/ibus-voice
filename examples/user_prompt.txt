@@ -1,8 +1,8 @@
-Use this dictionary when it is relevant:
+Dictionary:
 {dictionary}
 
 Recent completed sessions:
 {history}
 
-Clean this speech transcript and return plain text only:
+ASR transcript:
 {transcript}
