@@ -20,6 +20,20 @@ TMP_DIR="${RPM_ROOT}/tmp"
 RPM_CHANGELOG_DATE="$(LC_ALL=C date '+%a %b %d %Y')"
 COLI_STAGE_DIR="${RPM_ROOT}/coli-stage"
 
+HOST_ARCH="$(uname -m)"
+case "${HOST_ARCH}" in
+  x86_64)
+    RPM_ARCH="x86_64"
+    ;;
+  aarch64|arm64)
+    RPM_ARCH="aarch64"
+    ;;
+  *)
+    echo "error: unsupported architecture '${HOST_ARCH}' for RPM packaging" >&2
+    exit 1
+    ;;
+esac
+
 if ! command -v rpmbuild >/dev/null 2>&1; then
   echo "error: rpmbuild is required to build RPM packages" >&2
   echo "Install rpm-build tooling and rerun ./scripts/build-rpm.sh" >&2
@@ -75,7 +89,7 @@ Version: ${VERSION}
 Release: 1%{?dist}
 Summary: Voice input support for IBus on Linux
 License: MIT
-BuildArch: noarch
+BuildArch: ${RPM_ARCH}
 Source0: %{name}-%{version}.tar.gz
 Requires: ibus, python3, nodejs
 

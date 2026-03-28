@@ -15,8 +15,23 @@ PY
 BUILD_DIR="${ROOT_DIR}/.dist/deb"
 PACKAGE_DIR="${ROOT_DIR}/.dist/packages"
 PACKAGE_ROOT="${BUILD_DIR}/ibus-voice_${VERSION}"
-ARTIFACT_PATH="${PACKAGE_DIR}/ibus-voice_${VERSION}_all.deb"
 COLI_STAGE_DIR="${BUILD_DIR}/coli-stage"
+
+HOST_ARCH="$(uname -m)"
+case "${HOST_ARCH}" in
+  x86_64)
+    DEB_ARCH="amd64"
+    ;;
+  aarch64|arm64)
+    DEB_ARCH="arm64"
+    ;;
+  *)
+    echo "error: unsupported architecture '${HOST_ARCH}' for Debian packaging" >&2
+    exit 1
+    ;;
+esac
+
+ARTIFACT_PATH="${PACKAGE_DIR}/ibus-voice_${VERSION}_${DEB_ARCH}.deb"
 
 if ! command -v dpkg-deb >/dev/null 2>&1; then
   echo "error: dpkg-deb is required to build Debian packages" >&2
@@ -67,7 +82,7 @@ Package: ibus-voice
 Version: ${VERSION}
 Section: utils
 Priority: optional
-Architecture: all
+Architecture: ${DEB_ARCH}
 Maintainer: ibus-voice contributors
 Depends: python3, ibus, nodejs
 Description: Voice input support for IBus on Linux
