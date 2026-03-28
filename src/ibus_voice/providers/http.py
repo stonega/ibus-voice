@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import json
 import uuid
 from typing import Protocol
-from urllib import request
+from urllib import error, request
 
 
 class HttpTransport(Protocol):
@@ -25,8 +25,7 @@ class UrllibTransport:
     def post_json(self, url: str, headers: dict[str, str], payload: dict, timeout: float) -> dict:
         body = json.dumps(payload).encode("utf-8")
         req = request.Request(url=url, data=body, headers={**headers, "Content-Type": "application/json"})
-        with request.urlopen(req, timeout=timeout) as response:
-            return json.loads(response.read().decode("utf-8"))
+        return _perform_json_request(req, timeout=timeout)
 
     def post_multipart(
         self,
@@ -43,8 +42,42 @@ class UrllibTransport:
             data=body,
             headers={**headers, "Content-Type": f"multipart/form-data; boundary={boundary}"},
         )
+        return _perform_json_request(req, timeout=timeout)
+
+
+def _perform_json_request(req: request.Request, *, timeout: float) -> dict:
+    try:
         with request.urlopen(req, timeout=timeout) as response:
             return json.loads(response.read().decode("utf-8"))
+    except error.HTTPError as exc:
+        detail = _read_http_error_detail(exc)
+        raise RuntimeError(f"HTTP {exc.code}: {detail}") from exc
+
+
+def _read_http_error_detail(exc: error.HTTPError) -> str:
+    try:
+        body = exc.read().decode("utf-8").strip()
+    except Exception:
+        body = ""
+    if not body:
+        return exc.reason or "request failed"
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        return body
+    if isinstance(payload, dict):
+        error_payload = payload.get("error")
+        if isinstance(error_payload, dict):
+            message = error_payload.get("message")
+            code = error_payload.get("code")
+            if message and code:
+                return f"{code}: {message}"
+            if message:
+                return str(message)
+        message = payload.get("message")
+        if message:
+            return str(message)
+    return body
 
 
 def _encode_multipart(
