@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.3.0 - 2026-03-28
+
+- made ListenHub the default speech provider with `sensevoice` as the default local model
+- added a bundled fixed-width listening indicator so the animated dots render correctly in IBus auxiliary text
+- added a dedicated ListenHub provider module and improved provider validation around bundled or PATH-based `coli`
+- updated Debian and RPM builds to bundle `@marswave/coli` during packaging and require `nodejs` at runtime
+- refreshed user and release documentation for the new default provider and release version
+
 ## 0.1.2 - 2026-03-23
 
 - renamed packaged and installed launchers from `ibus-engine-voice` to `ibus-voice` for consistent CLI behavior

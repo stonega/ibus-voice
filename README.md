@@ -62,9 +62,9 @@ If you are building this project, useful implementation areas will likely includ
 - Speech recognition backend adapters
 - Packaging and installation for desktop environments
 
-## v0.1.2 Status
+## v0.3.0 Status
 
-`v0.1.2` is the current packaged alpha milestone. It includes:
+`v0.3.0` is the current packaged alpha milestone. It includes:
 
 - config loading
 - a push-to-talk engine state machine
@@ -85,7 +85,7 @@ Recent design work in this repository has also started closing feature gaps iden
 
 ## Release Notes
 
-For the `v0.1.2` milestone:
+For the `v0.3.0` milestone:
 
 - supported runtime shape is Python 3.11+ on Linux with IBus
 - the interaction model is hold-to-talk dictation: recording runs only while the configured hotkey chord is held
@@ -94,7 +94,7 @@ For the `v0.1.2` milestone:
 - transcript correction is optional and falls back to raw text if correction fails
 - package artifacts can be built locally as `.deb` and `.rpm`
 
-Known limitations for `v0.1.2`:
+Known limitations for `v0.3.0`:
 
 - desktop integration has unit coverage but limited live distro validation
 - local speech support depends on an installed `coli` binary for the ListenHub provider
