@@ -84,6 +84,9 @@ PY
 tar -C "${RPM_ROOT}/SOURCES" -czf "${RPM_ROOT}/SOURCES/ibus-voice-${VERSION}.tar.gz" "ibus-voice-${VERSION}"
 
 cat > "${SPEC_PATH}" <<EOF
+%global __requires_exclude_from ^/usr/lib/ibus-voice/(vendor|bin)/.*$
+%global __provides_exclude_from ^/usr/lib/ibus-voice/(vendor|bin)/.*$
+
 Name: ibus-voice
 Version: ${VERSION}
 Release: 1%{?dist}
