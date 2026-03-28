@@ -185,6 +185,10 @@ Feature-gap analysis for this phase was informed by the Koe project and its publ
 
 - https://koe.li/docs
 
+The local ListenHub integration also builds on the `coli` CLI maintained by marswaveai:
+
+- https://github.com/marswaveai/coli
+
 `ibus-voice` remains a Linux IBus project with its own architecture and scope.
 
 ## License
