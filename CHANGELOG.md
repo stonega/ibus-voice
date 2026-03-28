@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.3.3 - 2026-03-28
+
+- fixed package build architecture selection so Debian artifacts no longer rely only on runner host detection
+- passed explicit target architecture through the vendored ListenHub `coli` staging step during package builds
+- added CI checks that assert generated Debian and RPM package metadata matches the expected matrix architecture before upload
+
 ## 0.3.2 - 2026-03-28
 
 - added a Chinese-language IBus engine alias so `ibus-voice` can be added from both English and Chinese input source groups
