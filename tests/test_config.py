@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from ibus_voice.config import parse_config
+from ibus_voice.config import DEFAULT_COMPANION_FILES, DEFAULT_CONFIG_TEXT, load_config, load_history_path, parse_config
 
 
 class ParseConfigTests(unittest.TestCase):
@@ -180,3 +182,40 @@ class ParseConfigTests(unittest.TestCase):
                     "correction": {"enabled": False},
                 }
             )
+
+    def test_load_config_creates_default_config_when_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "config" / "ibus-voice" / "config.toml"
+            with patch("ibus_voice.config.DEFAULT_CONFIG_PATH", config_path):
+                config = load_config()
+
+            self.assertTrue(config_path.exists())
+            self.assertEqual(config_path.read_text(encoding="utf-8"), DEFAULT_CONFIG_TEXT)
+            self.assertEqual(config.provider.name, "listenhub")
+            self.assertEqual(config.provider.model, "sensevoice")
+            self.assertEqual(
+                config.history.path,
+                (config_path.parent / "history.db").resolve(),
+            )
+            for filename, contents in DEFAULT_COMPANION_FILES.items():
+                self.assertEqual((config_path.parent / filename).read_text(encoding="utf-8"), contents)
+
+    def test_load_history_path_creates_default_config_when_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "config" / "ibus-voice" / "config.toml"
+            with patch("ibus_voice.config.DEFAULT_CONFIG_PATH", config_path):
+                history_path = load_history_path()
+
+            self.assertTrue(config_path.exists())
+            self.assertEqual(history_path, (config_path.parent / "history.db").resolve())
+            for filename, contents in DEFAULT_COMPANION_FILES.items():
+                self.assertEqual((config_path.parent / filename).read_text(encoding="utf-8"), contents)
+
+    def test_load_config_does_not_create_missing_explicit_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "missing.toml"
+
+            with self.assertRaises(FileNotFoundError):
+                load_config(config_path)
+
+            self.assertFalse(config_path.exists())

@@ -8,6 +8,73 @@ import tomllib
 
 DEFAULT_CONFIG_PATH = Path.home() / ".config" / "ibus-voice" / "config.toml"
 DEFAULT_CONFIG_DIR = DEFAULT_CONFIG_PATH.parent
+DEFAULT_CONFIG_TEXT = """[provider]
+name = "listenhub"
+model = "sensevoice"
+timeout_seconds = 30
+dictionary_path = "dictionary.txt"
+
+# Remote OpenAI example:
+# name = "openai"
+# api_key = "replace-me"
+# model = "gpt-4o-transcribe"
+# timeout_seconds = 30
+
+[history]
+path = "history.db"
+
+[correction]
+enabled = false
+base_url = "https://api.openai.com/v1"
+api_key = "replace-me"
+model = "gpt-4o-mini"
+timeout_seconds = 8
+dictionary_path = "dictionary.txt"
+system_prompt_path = "system_prompt.txt"
+user_prompt_path = "user_prompt.txt"
+
+[audio]
+sample_rate = 16000
+channels = 1
+chunk_size = 1024
+sample_width = 2
+
+[hotkey]
+key = "space"
+modifiers = ["Control"]
+"""
+DEFAULT_COMPANION_FILES: dict[str, str] = {
+    "dictionary.txt": """IBus
+OpenAI
+Gemini
+ibus-voice
+""",
+    "system_prompt.txt": """You are a voice-input correction step for ibus-voice.
+
+The user speaks, ASR produces text, and you post-process that text before it is committed through IBus.
+Your output is inserted directly at the user's cursor.
+
+Rules:
+- Return only the final corrected text.
+- Do not add commentary, explanations, quotes, labels, or markdown.
+- Preserve the user's meaning.
+- Keep the output in the language or languages used in the transcript.
+- Do not translate, paraphrase, or force the text into a single language.
+- Preserve code-switching, mixed scripts, names, and technical terms.
+- Prefer canonical spellings from the provided dictionary when relevant.
+- Fix obvious ASR mistakes, punctuation, spacing, and capitalization.
+- Keep technical terms, product names, and API names in their intended casing.
+""",
+    "user_prompt.txt": """Dictionary:
+{dictionary}
+
+Recent completed sessions:
+{history}
+
+ASR transcript:
+{transcript}
+""",
+}
 
 
 @dataclass(slots=True)
@@ -68,6 +135,7 @@ class AppConfig:
 
 def load_config(path: str | os.PathLike[str] | None = None) -> AppConfig:
     config_path = Path(path) if path else DEFAULT_CONFIG_PATH
+    _ensure_default_config_exists(config_path, create_when_missing=path is None)
     with config_path.open("rb") as handle:
         raw = tomllib.load(handle)
     return parse_config(raw, base_dir=config_path.expanduser().resolve().parent)
@@ -75,6 +143,7 @@ def load_config(path: str | os.PathLike[str] | None = None) -> AppConfig:
 
 def load_history_path(path: str | os.PathLike[str] | None = None) -> Path:
     config_path = Path(path) if path else DEFAULT_CONFIG_PATH
+    _ensure_default_config_exists(config_path, create_when_missing=path is None)
     with config_path.open("rb") as handle:
         raw = tomllib.load(handle)
     return _parse_history_config(raw.get("history"), base_dir=config_path.expanduser().resolve().parent).path
@@ -213,3 +282,16 @@ def _resolve_optional_path(value: object, base_dir: Path) -> Path | None:
     if path.is_absolute():
         return path
     return (base_dir / path).resolve()
+
+
+def _ensure_default_config_exists(config_path: Path, *, create_when_missing: bool) -> None:
+    resolved_path = config_path.expanduser()
+    if resolved_path.exists() or not create_when_missing:
+        return
+    resolved_path.parent.mkdir(parents=True, exist_ok=True)
+    resolved_path.write_text(DEFAULT_CONFIG_TEXT, encoding="utf-8")
+    for filename, contents in DEFAULT_COMPANION_FILES.items():
+        companion_path = resolved_path.parent / filename
+        if companion_path.exists():
+            continue
+        companion_path.write_text(contents, encoding="utf-8")

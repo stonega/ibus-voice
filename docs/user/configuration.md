@@ -5,6 +5,8 @@
 Default location:
 
 - `~/.config/ibus-voice/config.toml`
+- if that file does not exist, `ibus-voice` creates it automatically on first run with the default ListenHub-based config shown below
+- first run also creates default `dictionary.txt`, `system_prompt.txt`, and `user_prompt.txt` beside the config if they are missing
 
 Example:
 
@@ -106,12 +108,12 @@ Installer behavior:
 
 - `scripts/install-local.sh` installs a local launcher at `~/.local/bin/ibus-voice`
 - the IBus component XML is installed at `~/.local/share/ibus-voice/component/ibus-voice.xml`
-- the default config is copied to `~/.config/ibus-voice/config.toml` if it does not already exist
+- the installer copies the default config to `~/.config/ibus-voice/config.toml` if it does not already exist
 - example `dictionary.txt`, `system_prompt.txt`, and `user_prompt.txt` should be copied into `~/.config/ibus-voice/`
 
 System installer behavior:
 
 - `scripts/install-system.sh` installs the launcher at `/usr/local/bin/ibus-voice`
 - the IBus component XML is installed at `/usr/share/ibus/component/ibus-voice.xml`
-- the default config is copied into the invoking user's `~/.config/ibus-voice/config.toml`
+- the installer copies the default config into the invoking user's `~/.config/ibus-voice/config.toml`
 - the launcher reads config from the runtime user's default config path
