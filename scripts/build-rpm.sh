@@ -21,18 +21,38 @@ RPM_CHANGELOG_DATE="$(LC_ALL=C date '+%a %b %d %Y')"
 COLI_STAGE_DIR="${RPM_ROOT}/coli-stage"
 
 HOST_ARCH="$(uname -m)"
-case "${HOST_ARCH}" in
-  x86_64)
-    RPM_ARCH="x86_64"
-    ;;
-  aarch64|arm64)
-    RPM_ARCH="aarch64"
-    ;;
-  *)
-    echo "error: unsupported architecture '${HOST_ARCH}' for RPM packaging" >&2
-    exit 1
-    ;;
-esac
+RPM_ARCH="${TARGET_RPM_ARCH:-}"
+NODE_ARCH="${TARGET_NODE_ARCH:-}"
+
+if [[ -z "${RPM_ARCH}" ]]; then
+  case "${HOST_ARCH}" in
+    x86_64)
+      RPM_ARCH="x86_64"
+      ;;
+    aarch64|arm64)
+      RPM_ARCH="aarch64"
+      ;;
+    *)
+      echo "error: unsupported architecture '${HOST_ARCH}' for RPM packaging" >&2
+      exit 1
+      ;;
+  esac
+fi
+
+if [[ -z "${NODE_ARCH}" ]]; then
+  case "${RPM_ARCH}" in
+    x86_64|amd64)
+      NODE_ARCH="x64"
+      ;;
+    aarch64|arm64)
+      NODE_ARCH="arm64"
+      ;;
+    *)
+      echo "error: unsupported RPM architecture '${RPM_ARCH}'" >&2
+      exit 1
+      ;;
+  esac
+fi
 
 if ! command -v rpmbuild >/dev/null 2>&1; then
   echo "error: rpmbuild is required to build RPM packages" >&2
@@ -65,7 +85,8 @@ cp "${ROOT_DIR}/examples/config.toml" "${SOURCE_DIR}/examples/config.toml"
 cp "${ROOT_DIR}/examples/dictionary.txt" "${SOURCE_DIR}/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${SOURCE_DIR}/examples/system_prompt.txt"
 cp "${ROOT_DIR}/examples/user_prompt.txt" "${SOURCE_DIR}/examples/user_prompt.txt"
-"${ROOT_DIR}/scripts/stage-coli.sh" "${COLI_STAGE_DIR}" "${SOURCE_DIR}"
+NPM_CONFIG_PLATFORM=linux NPM_CONFIG_ARCH="${NODE_ARCH}" \
+  "${ROOT_DIR}/scripts/stage-coli.sh" "${COLI_STAGE_DIR}" "${SOURCE_DIR}"
 
 cat > "${SOURCE_DIR}/ibus-voice" <<'EOF'
 #!/usr/bin/env bash

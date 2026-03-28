@@ -18,18 +18,38 @@ PACKAGE_ROOT="${BUILD_DIR}/ibus-voice_${VERSION}"
 COLI_STAGE_DIR="${BUILD_DIR}/coli-stage"
 
 HOST_ARCH="$(uname -m)"
-case "${HOST_ARCH}" in
-  x86_64)
-    DEB_ARCH="amd64"
-    ;;
-  aarch64|arm64)
-    DEB_ARCH="arm64"
-    ;;
-  *)
-    echo "error: unsupported architecture '${HOST_ARCH}' for Debian packaging" >&2
-    exit 1
-    ;;
-esac
+DEB_ARCH="${TARGET_DEB_ARCH:-}"
+NODE_ARCH="${TARGET_NODE_ARCH:-}"
+
+if [[ -z "${DEB_ARCH}" ]]; then
+  case "${HOST_ARCH}" in
+    x86_64)
+      DEB_ARCH="amd64"
+      ;;
+    aarch64|arm64)
+      DEB_ARCH="arm64"
+      ;;
+    *)
+      echo "error: unsupported architecture '${HOST_ARCH}' for Debian packaging" >&2
+      exit 1
+      ;;
+  esac
+fi
+
+if [[ -z "${NODE_ARCH}" ]]; then
+  case "${DEB_ARCH}" in
+    amd64|x86_64)
+      NODE_ARCH="x64"
+      ;;
+    arm64|aarch64)
+      NODE_ARCH="arm64"
+      ;;
+    *)
+      echo "error: unsupported Debian architecture '${DEB_ARCH}'" >&2
+      exit 1
+      ;;
+  esac
+fi
 
 ARTIFACT_PATH="${PACKAGE_DIR}/ibus-voice_${VERSION}_${DEB_ARCH}.deb"
 
@@ -61,7 +81,8 @@ cp "${ROOT_DIR}/examples/config.toml" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/
 cp "${ROOT_DIR}/examples/dictionary.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/system_prompt.txt"
 cp "${ROOT_DIR}/examples/user_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/user_prompt.txt"
-"${ROOT_DIR}/scripts/stage-coli.sh" "${COLI_STAGE_DIR}" "${PACKAGE_ROOT}/usr/lib/ibus-voice"
+NPM_CONFIG_PLATFORM=linux NPM_CONFIG_ARCH="${NODE_ARCH}" \
+  "${ROOT_DIR}/scripts/stage-coli.sh" "${COLI_STAGE_DIR}" "${PACKAGE_ROOT}/usr/lib/ibus-voice"
 
 cat > "${PACKAGE_ROOT}/usr/bin/ibus-voice" <<'EOF'
 #!/usr/bin/env bash

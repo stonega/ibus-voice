@@ -22,8 +22,14 @@ jobs:
       matrix:
         include:
           - arch: x86_64
+            deb_arch: amd64
+            rpm_arch: x86_64
+            node_arch: x64
             runner: ubuntu-latest
           - arch: aarch64
+            deb_arch: arm64
+            rpm_arch: aarch64
+            node_arch: arm64
             runner: ubuntu-24.04-arm
 
     runs-on: ${{ matrix.runner }}
@@ -44,9 +50,35 @@ jobs:
 
       - name: Build Debian package
         run: ./scripts/build-deb.sh
+        env:
+          TARGET_DEB_ARCH: ${{ matrix.deb_arch }}
+          TARGET_NODE_ARCH: ${{ matrix.node_arch }}
 
       - name: Build RPM package
         run: ./scripts/build-rpm.sh
+        env:
+          TARGET_RPM_ARCH: ${{ matrix.rpm_arch }}
+          TARGET_NODE_ARCH: ${{ matrix.node_arch }}
+
+      - name: Verify Debian package architecture
+        run: |
+          pkg=".dist/packages/ibus-voice_$(python3 - <<'PY'
+import tomllib
+from pathlib import Path
+print(tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"])
+PY
+)_${{ matrix.deb_arch }}.deb"
+          test "$(dpkg-deb -f "$pkg" Architecture)" = "${{ matrix.deb_arch }}"
+
+      - name: Verify RPM package architecture
+        run: |
+          pkg=".dist/packages/ibus-voice-$(python3 - <<'PY'
+import tomllib
+from pathlib import Path
+print(tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"])
+PY
+)-1.${{ matrix.rpm_arch }}.rpm"
+          test "$(rpm -qp --queryformat '%{ARCH}' "$pkg")" = "${{ matrix.rpm_arch }}"
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v6

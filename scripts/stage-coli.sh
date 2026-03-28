@@ -17,7 +17,9 @@ fi
 rm -rf "${STAGING_DIR}"
 mkdir -p "${STAGING_DIR}" "${APP_ROOT}/bin" "${APP_ROOT}/vendor"
 
-npm install --prefix "${STAGING_DIR}" @marswave/coli >/dev/null
+npm_config_platform="${NPM_CONFIG_PLATFORM:-linux}" \
+npm_config_arch="${NPM_CONFIG_ARCH:-}" \
+  npm install --prefix "${STAGING_DIR}" @marswave/coli >/dev/null
 
 cp -a "${STAGING_DIR}/node_modules" "${APP_ROOT}/vendor/"
 
