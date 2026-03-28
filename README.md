@@ -120,7 +120,7 @@ Install the ListenHub CLI dependency when using the local provider:
 ./scripts/install-coli.sh
 ```
 
-Debian and RPM package builds bundle the ListenHub CLI into the package at build time and require `nodejs` on the target system to run it.
+Debian and RPM package builds bundle the ListenHub CLI into the package at build time. Install `nodejs` if you want to use the bundled local ListenHub `coli` runtime.
 
 If correction is configured and enabled, `ibus-voice` will:
 

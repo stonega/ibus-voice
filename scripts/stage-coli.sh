@@ -28,6 +28,10 @@ cat > "${APP_ROOT}/bin/coli" <<'EOF'
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+if ! command -v node >/dev/null 2>&1; then
+  echo "error: node is required to run the bundled coli CLI; install nodejs or install coli separately on PATH" >&2
+  exit 127
+fi
 exec /usr/bin/env node "${APP_ROOT}/vendor/node_modules/.bin/coli" "$@"
 EOF
 chmod 0755 "${APP_ROOT}/bin/coli"

@@ -80,8 +80,15 @@ class FakeRunner:
 class ProviderTests(unittest.TestCase):
     def test_find_coli_binary_prefers_bundled_wrapper(self) -> None:
         with patch("ibus_voice.providers.listenhub.bundled_coli_binary_path", return_value="/opt/ibus-voice/bin/coli"):
-            with patch("ibus_voice.providers.listenhub.shutil.which", return_value="/usr/bin/coli"):
-                self.assertEqual(find_coli_binary(), "/opt/ibus-voice/bin/coli")
+            with patch("ibus_voice.providers.listenhub.has_node_runtime", return_value=True):
+                with patch("ibus_voice.providers.listenhub.shutil.which", return_value="/usr/bin/coli"):
+                    self.assertEqual(find_coli_binary(), "/opt/ibus-voice/bin/coli")
+
+    def test_find_coli_binary_falls_back_to_path_when_node_missing(self) -> None:
+        with patch("ibus_voice.providers.listenhub.bundled_coli_binary_path", return_value="/opt/ibus-voice/bin/coli"):
+            with patch("ibus_voice.providers.listenhub.has_node_runtime", return_value=False):
+                with patch("ibus_voice.providers.listenhub.shutil.which", return_value="/usr/bin/coli"):
+                    self.assertEqual(find_coli_binary(), "/usr/bin/coli")
 
     def test_find_coli_binary_falls_back_to_path(self) -> None:
         with patch("ibus_voice.providers.listenhub.bundled_coli_binary_path", return_value=None):

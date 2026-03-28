@@ -60,7 +60,7 @@ Local ListenHub notes:
 
 - `listenhub` follows the local ASR flow documented at `https://listenhub.ai/docs/zh/skills/asr`
 - install the CLI with `./scripts/install-coli.sh` or `npm install -g @marswave/coli`
-- Debian and RPM package builds bundle `@marswave/coli` into the package during the build, but the installed package still needs `nodejs` to run the bundled CLI
+- Debian and RPM package builds bundle `@marswave/coli` into the package during the build; install `nodejs` if you want to use the bundled local CLI at runtime
 - `ffmpeg` is recommended if you want `coli` to accept non-WAV formats directly, but `ibus-voice` records WAV already
 - the current integration assumes `coli asr` prints the transcript to stdout
 - `dictionary_path` is currently ignored by the local ListenHub provider because the published CLI docs do not describe a dictionary-bias flag

@@ -19,6 +19,10 @@ DEFAULT_MODEL = "sensevoice"
 BUNDLED_BINARY_RELATIVE_PATH = Path("bin") / DEFAULT_BINARY
 
 
+def has_node_runtime() -> bool:
+    return shutil.which("node") is not None
+
+
 def bundled_coli_binary_path() -> str | None:
     bundled_path = Path(__file__).resolve().parents[3] / BUNDLED_BINARY_RELATIVE_PATH
     if bundled_path.is_file() and os.access(bundled_path, os.X_OK):
@@ -28,7 +32,7 @@ def bundled_coli_binary_path() -> str | None:
 
 def find_coli_binary() -> str | None:
     bundled_path = bundled_coli_binary_path()
-    if bundled_path is not None:
+    if bundled_path is not None and has_node_runtime():
         return bundled_path
     return shutil.which(DEFAULT_BINARY)
 
@@ -38,7 +42,7 @@ def ensure_coli_available() -> str:
     if binary_path is None:
         raise ProviderFailure(
             "listenhub",
-            "coli is not bundled and not on PATH; install @marswave/coli first",
+            "coli is unavailable; install nodejs to use the bundled CLI or install @marswave/coli on PATH",
         )
     return binary_path
 

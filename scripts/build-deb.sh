@@ -105,7 +105,8 @@ Section: utils
 Priority: optional
 Architecture: ${DEB_ARCH}
 Maintainer: ibus-voice contributors
-Depends: python3, ibus, nodejs
+Depends: python3, ibus
+Recommends: nodejs
 Description: Voice input support for IBus on Linux
 EOF
 
