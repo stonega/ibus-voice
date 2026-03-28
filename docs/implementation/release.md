@@ -1,8 +1,8 @@
 # Release Process
 
-## v0.3.4 Baseline
+## v0.3.5 Baseline
 
-This repository now treats `0.3.4` as the current packaged alpha release.
+This repository now treats `0.3.5` as the current packaged alpha release.
 
 Release expectations:
 
@@ -19,4 +19,4 @@ Release expectations:
 4. Run `./scripts/build-rpm.sh` on a system with `rpmbuild`.
 5. Verify artifacts in `.dist/packages/`.
 6. Review `README.md`, `docs/user/getting-started.md`, and `CHANGELOG.md`.
-7. Create the `v0.3.4` tag after the release commit is finalized.
+7. Create the `v0.3.5` tag after the release commit is finalized.

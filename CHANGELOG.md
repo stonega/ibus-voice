@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.3.5 - 2026-03-28
+
+- created `~/.config/ibus-voice/config.toml` automatically on first run when the default user config is missing
+- created default `dictionary.txt`, `system_prompt.txt`, and `user_prompt.txt` beside the generated config on first run
+- documented the new first-run bootstrap behavior for runtime config loading
+
 ## 0.3.4 - 2026-03-28
 
 - fixed the package workflow YAML so GitHub Actions can parse and run the architecture verification steps
