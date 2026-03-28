@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.3.4 - 2026-03-28
+
+- fixed the package workflow YAML so GitHub Actions can parse and run the architecture verification steps
+- relaxed the Debian package dependency on `nodejs` so the package remains installable on Ubuntu systems where that package name is unavailable
+- made the local ListenHub provider fall back to a PATH-installed `coli` binary when the bundled wrapper cannot run because `node` is missing
+- added a README credit for the upstream `marswaveai/coli` CLI used by the local ListenHub integration
+
 ## 0.3.3 - 2026-03-28
 
 - fixed package build architecture selection so Debian artifacts no longer rely only on runner host detection
