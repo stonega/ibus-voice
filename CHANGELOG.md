@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.3.1 - 2026-03-28
+
+- updated GitHub Actions to use newer JavaScript action runtimes and opt into Node 24 now
+- added x86_64 and aarch64 package builds in CI and aligned package metadata with the host architecture
+- disabled artifact recompression in CI uploads for packaged files
+- filtered bundled ListenHub runtime paths out of RPM auto dependency scanning to avoid false solver requirements
+
 ## 0.3.0 - 2026-03-28
 
 - made ListenHub the default speech provider with `sensevoice` as the default local model
