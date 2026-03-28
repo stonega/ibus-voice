@@ -57,6 +57,7 @@ Files:
 
 Next steps:
 1. Ensure ${BIN_DIR} is on your PATH.
-2. Start IBus with: IBUS_COMPONENT_PATH="${COMPONENT_DIR}" ibus-daemon -rdx
-3. For GNOME input-source discovery, prefer: sudo ./scripts/install-system.sh
+2. If you plan to use the ListenHub provider, install coli with: ./scripts/install-coli.sh
+3. Start IBus with: IBUS_COMPONENT_PATH="${COMPONENT_DIR}" ibus-daemon -rdx
+4. For GNOME input-source discovery, prefer: sudo ./scripts/install-system.sh
 EOF

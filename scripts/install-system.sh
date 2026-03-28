@@ -61,8 +61,9 @@ Files:
 - user prompt: ${CONFIG_DIR}/user_prompt.txt
 
 Next steps:
-1. Run: ibus restart
-2. Open IBus Preferences
-3. Add the "ibus-voice" input method
-4. If GNOME Settings still does not list it, log out and log back in
+1. If you plan to use the ListenHub provider, install coli with: ./scripts/install-coli.sh
+2. Run: ibus restart
+3. Open IBus Preferences
+4. Add the "ibus-voice" input method
+5. If GNOME Settings still does not list it, log out and log back in
 EOF

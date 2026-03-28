@@ -10,9 +10,8 @@ Example:
 
 ```toml
 [provider]
-name = "openai"
-api_key = "replace-me"
-model = "gpt-4o-transcribe"
+name = "listenhub"
+model = "sensevoice"
 timeout_seconds = 30
 dictionary_path = "dictionary.txt"
 
@@ -42,9 +41,11 @@ modifiers = ["Control"]
 
 To switch providers, change `provider.name` and update the provider-specific fields:
 
+- `listenhub`: install `coli`, omit `api_key`, and optionally set `model = "sensevoice"` or `model = "whisper-tiny.en"`
 - `openai`: set `api_key` and an OpenAI transcription model such as `gpt-4o-transcribe`
 - `gemini`: set `api_key` and a Gemini model that supports inline audio input
-- `listenhub`: install `coli`, omit `api_key`, and optionally set `model = "sensevoice"` or `model = "whisper-tiny.en"`
+
+When `[provider]` is omitted entirely, `ibus-voice` defaults to `listenhub` with `model = "sensevoice"`.
 
 Supported provider defaults:
 
@@ -59,10 +60,11 @@ Local ListenHub notes:
 
 - `listenhub` follows the local ASR flow documented at `https://listenhub.ai/docs/zh/skills/asr`
 - install the CLI with `./scripts/install-coli.sh` or `npm install -g @marswave/coli`
+- Debian and RPM package builds bundle `@marswave/coli` into the package during the build, but the installed package still needs `nodejs` to run the bundled CLI
 - `ffmpeg` is recommended if you want `coli` to accept non-WAV formats directly, but `ibus-voice` records WAV already
 - the current integration assumes `coli asr` prints the transcript to stdout
 - `dictionary_path` is currently ignored by the local ListenHub provider because the published CLI docs do not describe a dictionary-bias flag
-- `ibus-voice.cli --check` fails fast when `provider.name = "listenhub"` and `coli` is missing from `PATH`
+- `ibus-voice.cli --check` fails fast when `provider.name = "listenhub"` and `coli` is neither bundled with the app nor available on `PATH`
 
 Correction notes:
 

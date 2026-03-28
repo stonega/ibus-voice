@@ -10,7 +10,7 @@ from ibus_voice.audio import AudioPayload
 from ibus_voice.config import ProviderConfig
 from ibus_voice.providers.factory import build_provider
 from ibus_voice.providers.gemini import GeminiProvider
-from ibus_voice.providers.listenhub import ListenHubProvider
+from ibus_voice.providers.listenhub import ListenHubProvider, find_coli_binary
 from ibus_voice.providers.openai import OpenAIProvider
 from ibus_voice.types import ProviderFailure
 
@@ -78,6 +78,16 @@ class FakeRunner:
 
 
 class ProviderTests(unittest.TestCase):
+    def test_find_coli_binary_prefers_bundled_wrapper(self) -> None:
+        with patch("ibus_voice.providers.listenhub.bundled_coli_binary_path", return_value="/opt/ibus-voice/bin/coli"):
+            with patch("ibus_voice.providers.listenhub.shutil.which", return_value="/usr/bin/coli"):
+                self.assertEqual(find_coli_binary(), "/opt/ibus-voice/bin/coli")
+
+    def test_find_coli_binary_falls_back_to_path(self) -> None:
+        with patch("ibus_voice.providers.listenhub.bundled_coli_binary_path", return_value=None):
+            with patch("ibus_voice.providers.listenhub.shutil.which", return_value="/usr/bin/coli"):
+                self.assertEqual(find_coli_binary(), "/usr/bin/coli")
+
     def test_openai_normalizes_text(self) -> None:
         provider = OpenAIProvider(
             config=ProviderConfig(name="openai", api_key="x", model="m"),

@@ -70,6 +70,7 @@ If you are building this project, useful implementation areas will likely includ
 - a push-to-talk engine state machine
 - PyAudio-based recorder integration
 - OpenAI and Gemini provider adapters
+- a local ListenHub `coli asr` provider adapter
 - dictionary-aware OpenAI and Gemini transcription prompting
 - optional OpenAI-compatible correction after transcription with transcript history context
 - an IBus engine registration and hotkey handling layer
@@ -87,15 +88,16 @@ Recent design work in this repository has also started closing feature gaps iden
 For the `v0.1.2` milestone:
 
 - supported runtime shape is Python 3.11+ on Linux with IBus
-- the interaction model is push-to-talk dictation
-- speech recognition backends are pluggable and currently include OpenAI and Gemini adapters
+- the interaction model is hold-to-talk dictation: recording runs only while the configured hotkey chord is held
+- speech recognition backends are pluggable and currently include OpenAI, Gemini, and ListenHub adapters
+- new installs default to the local ListenHub provider with the `sensevoice` model
 - transcript correction is optional and falls back to raw text if correction fails
 - package artifacts can be built locally as `.deb` and `.rpm`
 
 Known limitations for `v0.1.2`:
 
 - desktop integration has unit coverage but limited live distro validation
-- no local speech backend is bundled yet
+- local speech support depends on an installed `coli` binary for the ListenHub provider
 - only final text commit is implemented; partial transcript display is not
 
 ## Development
@@ -111,6 +113,14 @@ Validate a config file with:
 ```bash
 PYTHONPATH=src python3 -m ibus_voice.cli --config examples/config.toml --check
 ```
+
+Install the ListenHub CLI dependency when using the local provider:
+
+```bash
+./scripts/install-coli.sh
+```
+
+Debian and RPM package builds bundle the ListenHub CLI into the package at build time and require `nodejs` on the target system to run it.
 
 If correction is configured and enabled, `ibus-voice` will:
 

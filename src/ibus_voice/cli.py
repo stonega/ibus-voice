@@ -12,7 +12,9 @@ from ibus_voice.engine import VoiceEngine
 from ibus_voice.history import DEFAULT_HISTORY_PATH, SQLiteSessionHistory, format_completed_sessions
 from ibus_voice.ibus_service import IBusVoiceService, TextCommitter
 from ibus_voice.metadata import render_engines_xml, render_version_text
+from ibus_voice.providers.listenhub import ensure_coli_available
 from ibus_voice.providers import build_provider
+from ibus_voice.types import ProviderFailure
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -49,6 +51,21 @@ def main(argv: list[str] | None = None) -> int:
             return 1
     config = load_config(args.config)
     provider = build_provider(config.provider)
+    if args.check:
+        correction_status = "enabled" if config.correction and config.correction.enabled else "disabled"
+        dependency_status = ""
+        if config.provider.name.lower() == "listenhub":
+            try:
+                coli_path = ensure_coli_available()
+            except ProviderFailure as exc:
+                print(f"config check failed: {exc}", file=sys.stderr)
+                return 1
+            dependency_status = f" coli={coli_path}"
+        print(
+            "config ok: "
+            f"provider={config.provider.name} model={config.provider.model} correction={correction_status}{dependency_status}"
+        )
+        return 0
     corrector = build_corrector(config.correction)
     recorder = PyAudioRecorder(config.audio)
     history = SQLiteSessionHistory(config.history.path)
@@ -59,13 +76,6 @@ def main(argv: list[str] | None = None) -> int:
         corrector=corrector,
         history=history,
     )
-    if args.check:
-        correction_status = "enabled" if config.correction and config.correction.enabled else "disabled"
-        print(
-            "config ok: "
-            f"provider={config.provider.name} model={config.provider.model} correction={correction_status}"
-        )
-        return 0
     service = IBusVoiceService(config=config, voice_engine=engine)
     return service.run()
 

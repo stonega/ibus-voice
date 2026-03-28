@@ -13,8 +13,8 @@ DEFAULT_CONFIG_DIR = DEFAULT_CONFIG_PATH.parent
 @dataclass(slots=True)
 class ProviderConfig:
     name: str
-    api_key: str
     model: str
+    api_key: str = ""
     endpoint: str | None = None
     timeout_seconds: float = 30.0
     dictionary_path: Path | None = None
@@ -82,23 +82,11 @@ def load_history_path(path: str | os.PathLike[str] | None = None) -> Path:
 
 def parse_config(raw: dict, *, base_dir: Path | None = None) -> AppConfig:
     provider_section = raw.get("provider", {})
-    name = provider_section.get("name")
-    api_key = provider_section.get("api_key")
-    model = provider_section.get("model")
-    if not name or not api_key or not model:
-        raise ValueError("provider.name, provider.api_key, and provider.model are required")
-
     audio_section = raw.get("audio", {})
     hotkey_section = raw.get("hotkey", {})
+    config_base_dir = base_dir or DEFAULT_CONFIG_DIR
 
-    provider = ProviderConfig(
-        name=str(name),
-        api_key=str(api_key),
-        model=str(model),
-        endpoint=_optional_str(provider_section.get("endpoint")),
-        timeout_seconds=float(provider_section.get("timeout_seconds", 30.0)),
-        dictionary_path=_resolve_optional_path(provider_section.get("dictionary_path", "dictionary.txt"), base_dir or DEFAULT_CONFIG_DIR),
-    )
+    provider = _parse_provider_config(provider_section, base_dir=config_base_dir)
     audio = AudioConfig(
         sample_rate=int(audio_section.get("sample_rate", 16_000)),
         channels=int(audio_section.get("channels", 1)),
@@ -109,7 +97,7 @@ def parse_config(raw: dict, *, base_dir: Path | None = None) -> AppConfig:
     modifiers = hotkey_section.get("modifiers", ["Control"])
     if isinstance(modifiers, str):
         modifiers = [modifiers]
-    history = _parse_history_config(raw.get("history"), base_dir=base_dir or DEFAULT_CONFIG_DIR)
+    history = _parse_history_config(raw.get("history"), base_dir=config_base_dir)
     hotkey = HotkeyConfig(
         key=str(hotkey_section.get("key", "space")),
         modifiers=tuple(str(item) for item in modifiers),
@@ -117,10 +105,36 @@ def parse_config(raw: dict, *, base_dir: Path | None = None) -> AppConfig:
     correction = _parse_correction_config(
         raw.get("correction"),
         legacy_raw=raw.get("cleanup"),
-        base_dir=base_dir or DEFAULT_CONFIG_DIR,
+        base_dir=config_base_dir,
         default_history_path=history.path,
     )
     return AppConfig(provider=provider, audio=audio, hotkey=hotkey, history=history, correction=correction)
+
+
+def _parse_provider_config(raw: object, *, base_dir: Path) -> ProviderConfig:
+    if not isinstance(raw, dict):
+        raise ValueError("provider section must be a table")
+    name = str(raw.get("name", "listenhub"))
+    normalized_name = name.lower()
+    model = _optional_str(raw.get("model"))
+    api_key = _optional_str(raw.get("api_key")) or ""
+
+    if normalized_name in {"openai", "gemini"}:
+        if not api_key or not model:
+            raise ValueError("provider.api_key and provider.model are required for remote providers")
+    elif normalized_name == "listenhub":
+        model = model or "sensevoice"
+    elif not model:
+        raise ValueError("provider.model is required")
+
+    return ProviderConfig(
+        name=name,
+        model=model or "",
+        api_key=api_key,
+        endpoint=_optional_str(raw.get("endpoint")),
+        timeout_seconds=float(raw.get("timeout_seconds", 30.0)),
+        dictionary_path=_resolve_optional_path(raw.get("dictionary_path", "dictionary.txt"), base_dir),
+    )
 
 def _parse_history_config(raw: object, *, base_dir: Path) -> HistoryConfig:
     if raw is None:
@@ -182,6 +196,12 @@ def _optional_int(value: object) -> int | None:
 def _required_str(value: object, field_name: str) -> str:
     if value in (None, ""):
         raise ValueError(f"{field_name} is required when correction is enabled")
+    return str(value)
+
+
+def _required_value(value: object, field_name: str) -> str:
+    if value in (None, ""):
+        raise ValueError(f"{field_name} is required")
     return str(value)
 
 

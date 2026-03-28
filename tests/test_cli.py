@@ -8,9 +8,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from ibus_voice.cli import main
+from ibus_voice.config import AppConfig, AudioConfig, HistoryConfig, HotkeyConfig, ProviderConfig
 from ibus_voice.history import SQLiteSessionHistory
 from ibus_voice.metadata import ISSUES, REPOSITORY, VERSION
-from ibus_voice.types import TranscriptResult
+from ibus_voice.types import ProviderFailure, TranscriptResult
 
 
 class CLITests(unittest.TestCase):
@@ -93,3 +94,43 @@ path = "state/history.db"
 
         self.assertEqual(exit_code, 0)
         self.assertIn("Configured path.", output.getvalue())
+
+    def test_check_command_reports_listenhub_binary_path(self) -> None:
+        config = AppConfig(
+            provider=ProviderConfig(name="listenhub", model="sensevoice"),
+            audio=AudioConfig(),
+            hotkey=HotkeyConfig(),
+            history=HistoryConfig(path=Path("/tmp/history.db")),
+            correction=None,
+        )
+        output = io.StringIO()
+        with patch("ibus_voice.cli.load_config", return_value=config), \
+             patch("ibus_voice.cli.build_provider", return_value=object()), \
+             patch("ibus_voice.cli.ensure_coli_available", return_value="/usr/local/bin/coli"):
+            with redirect_stdout(output):
+                exit_code = main(["--check"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("provider=listenhub", output.getvalue())
+        self.assertIn("coli=/usr/local/bin/coli", output.getvalue())
+
+    def test_check_command_fails_cleanly_when_listenhub_binary_is_missing(self) -> None:
+        config = AppConfig(
+            provider=ProviderConfig(name="listenhub", model="sensevoice"),
+            audio=AudioConfig(),
+            hotkey=HotkeyConfig(),
+            history=HistoryConfig(path=Path("/tmp/history.db")),
+            correction=None,
+        )
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with patch("ibus_voice.cli.load_config", return_value=config), \
+             patch("ibus_voice.cli.build_provider", return_value=object()), \
+             patch("ibus_voice.cli.ensure_coli_available", side_effect=ProviderFailure("listenhub", "missing coli")):
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                exit_code = main(["--check"])
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertIn("config check failed:", stderr.getvalue())
+        self.assertIn("missing coli", stderr.getvalue())

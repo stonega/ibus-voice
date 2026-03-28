@@ -7,6 +7,17 @@ from ibus_voice.config import parse_config
 
 
 class ParseConfigTests(unittest.TestCase):
+    def test_provider_defaults_to_listenhub(self) -> None:
+        config = parse_config({}, base_dir=Path("/tmp/ibus-voice-config"))
+
+        self.assertEqual(config.provider.name, "listenhub")
+        self.assertEqual(config.provider.api_key, "")
+        self.assertEqual(config.provider.model, "sensevoice")
+        self.assertEqual(
+            config.provider.dictionary_path,
+            Path("/tmp/ibus-voice-config/dictionary.txt").resolve(),
+        )
+
     def test_parse_valid_config(self) -> None:
         config = parse_config(
             {
@@ -29,6 +40,24 @@ class ParseConfigTests(unittest.TestCase):
     def test_missing_provider_fields_fail(self) -> None:
         with self.assertRaises(ValueError):
             parse_config({"provider": {"name": "openai"}})
+
+    def test_parse_listenhub_provider_without_api_key(self) -> None:
+        config = parse_config(
+            {
+                "provider": {
+                    "name": "listenhub",
+                },
+            },
+            base_dir=Path("/tmp/ibus-voice-config"),
+        )
+
+        self.assertEqual(config.provider.name, "listenhub")
+        self.assertEqual(config.provider.api_key, "")
+        self.assertEqual(config.provider.model, "sensevoice")
+        self.assertEqual(
+            config.provider.dictionary_path,
+            Path("/tmp/ibus-voice-config/dictionary.txt").resolve(),
+        )
 
     def test_parse_correction_config_with_relative_paths(self) -> None:
         config = parse_config(

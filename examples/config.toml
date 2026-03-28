@@ -1,9 +1,14 @@
 [provider]
-name = "openai"
-api_key = "replace-me"
-model = "gpt-4o-transcribe"
+name = "listenhub"
+model = "sensevoice"
 timeout_seconds = 30
 dictionary_path = "dictionary.txt"
+
+# Remote OpenAI example:
+# name = "openai"
+# api_key = "replace-me"
+# model = "gpt-4o-transcribe"
+# timeout_seconds = 30
 
 [history]
 path = "history.db"

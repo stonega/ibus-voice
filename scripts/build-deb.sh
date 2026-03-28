@@ -16,10 +16,16 @@ BUILD_DIR="${ROOT_DIR}/.dist/deb"
 PACKAGE_DIR="${ROOT_DIR}/.dist/packages"
 PACKAGE_ROOT="${BUILD_DIR}/ibus-voice_${VERSION}"
 ARTIFACT_PATH="${PACKAGE_DIR}/ibus-voice_${VERSION}_all.deb"
+COLI_STAGE_DIR="${BUILD_DIR}/coli-stage"
 
 if ! command -v dpkg-deb >/dev/null 2>&1; then
   echo "error: dpkg-deb is required to build Debian packages" >&2
   echo "Install dpkg tooling and rerun ./scripts/build-deb.sh" >&2
+  exit 1
+fi
+if ! command -v npm >/dev/null 2>&1; then
+  echo "error: npm is required to bundle @marswave/coli into Debian packages" >&2
+  echo "Install npm and rerun ./scripts/build-deb.sh" >&2
   exit 1
 fi
 
@@ -40,6 +46,7 @@ cp "${ROOT_DIR}/examples/config.toml" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/
 cp "${ROOT_DIR}/examples/dictionary.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/system_prompt.txt"
 cp "${ROOT_DIR}/examples/user_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/user_prompt.txt"
+"${ROOT_DIR}/scripts/stage-coli.sh" "${COLI_STAGE_DIR}" "${PACKAGE_ROOT}/usr/lib/ibus-voice"
 
 cat > "${PACKAGE_ROOT}/usr/bin/ibus-voice" <<'EOF'
 #!/usr/bin/env bash
@@ -62,7 +69,7 @@ Section: utils
 Priority: optional
 Architecture: all
 Maintainer: ibus-voice contributors
-Depends: python3, ibus
+Depends: python3, ibus, nodejs
 Description: Voice input support for IBus on Linux
 EOF
 

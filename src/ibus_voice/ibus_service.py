@@ -25,6 +25,12 @@ from ibus_voice.metadata import (
 
 LOGGER = logging.getLogger(__name__)
 
+LISTENING_ICON = "🎙"
+# Keep the auxiliary text at a stable width from the first frame so IBus
+# panels do not clip later frames after measuring the initial shortest label.
+LISTENING_DOT_FRAMES = ("...", ".. ", ".  ")
+LISTENING_ANIMATION_INTERVAL_MS = 350
+
 
 try:  # pragma: no cover - depends on host desktop libraries
     import gi
@@ -65,6 +71,23 @@ def _hide_auxiliary_status(engine: object) -> None:
     _set_auxiliary_status(engine, "", visible=False)
 
 
+def _listening_status_text(frame: int) -> str:
+    dots = LISTENING_DOT_FRAMES[frame % len(LISTENING_DOT_FRAMES)]
+    return f"{LISTENING_ICON}{dots}"
+
+
+def _remove_glib_source(source_id: int) -> None:
+    if GLib is None:
+        return
+    source_remove = getattr(GLib, "source_remove", None)
+    if callable(source_remove):
+        source_remove(source_id)
+        return
+    source = getattr(GLib, "Source", None)
+    if source is not None and hasattr(source, "remove"):
+        source.remove(source_id)
+
+
 @dataclass(slots=True)
 class HotkeyMatcher:
     key: str
@@ -90,6 +113,22 @@ class HotkeyMatcher:
         release_mask = int(IBus.ModifierType.RELEASE_MASK)
         return keyval == _key_name_to_value(self.key) and bool(int(state) & release_mask)
 
+    def matches_release(self, keyval: int, state: int) -> bool:
+        if self.matches_release_key(keyval, state):
+            return True
+        return self._matches_modifier_release(keyval, state)
+
+    def _matches_modifier_release(self, keyval: int, state: int) -> bool:
+        if IBus is None:
+            return False
+        release_mask = int(IBus.ModifierType.RELEASE_MASK)
+        if not bool(int(state) & release_mask):
+            return False
+        for modifier in self.modifiers:
+            if keyval in _modifier_name_to_key_values(modifier):
+                return True
+        return False
+
 
 if IBus is not None:  # pragma: no branch
     class VoiceIBusEngine(IBus.Engine):  # pragma: no cover - hard to instantiate in isolated tests
@@ -101,6 +140,8 @@ if IBus is not None:  # pragma: no branch
             )
             self._voice_engine = voice_engine
             self._matcher = matcher
+            self._listening_status_frame = 0
+            self._listening_status_source_id: int | None = None
             committer = self._voice_engine.committer
             if isinstance(committer, TextCommitter):
                 committer.engine = self
@@ -108,6 +149,7 @@ if IBus is not None:  # pragma: no branch
         def do_focus_out(self) -> None:
             if self._voice_engine.state == "recording":
                 self._voice_engine.handle_release()
+            self._stop_listening_animation()
             _hide_auxiliary_status(self)
             super().do_focus_out()
 
@@ -116,9 +158,10 @@ if IBus is not None:  # pragma: no branch
             if self._matcher.matches(keyval, state, released=False):
                 self._voice_engine.handle_press()
                 if self._voice_engine.state == "recording":
-                    _set_auxiliary_status(self, "Listening...", visible=True)
+                    self._start_listening_animation()
                 return True
-            if self._voice_engine.state == "recording" and self._matcher.matches_release_key(keyval, state):
+            if self._voice_engine.state == "recording" and self._matcher.matches_release(keyval, state):
+                self._stop_listening_animation()
                 self._voice_engine.handle_release()
                 if self._voice_engine.last_error:
                     _set_auxiliary_status(self, f"Voice input failed: {self._voice_engine.last_error}", visible=True)
@@ -126,6 +169,31 @@ if IBus is not None:  # pragma: no branch
                     _hide_auxiliary_status(self)
                 return True
             return False
+
+        def _start_listening_animation(self) -> None:
+            self._stop_listening_animation()
+            self._listening_status_frame = 0
+            _set_auxiliary_status(self, _listening_status_text(self._listening_status_frame), visible=True)
+            if GLib is None:
+                return
+            self._listening_status_source_id = GLib.timeout_add(
+                LISTENING_ANIMATION_INTERVAL_MS,
+                self._advance_listening_animation,
+            )
+
+        def _stop_listening_animation(self) -> None:
+            if self._listening_status_source_id is None:
+                return
+            _remove_glib_source(self._listening_status_source_id)
+            self._listening_status_source_id = None
+
+        def _advance_listening_animation(self) -> bool:
+            if self._voice_engine.state != "recording":
+                self._listening_status_source_id = None
+                return False
+            self._listening_status_frame += 1
+            _set_auxiliary_status(self, _listening_status_text(self._listening_status_frame), visible=True)
+            return True
 
 
     class VoiceEngineFactory(IBus.Factory):  # pragma: no cover - depends on live IBus
@@ -226,3 +294,21 @@ def _modifier_name_to_mask(name: str) -> int:
     if value is None:
         raise ValueError(f"unsupported modifier: {name}")
     return int(value)
+
+
+def _modifier_name_to_key_values(name: str) -> tuple[int, ...]:
+    if IBus is None:
+        raise RuntimeError("IBus is unavailable")
+
+    modifier_key_names = {
+        "control": ("Control_L", "Control_R"),
+        "shift": ("Shift_L", "Shift_R"),
+        "alt": ("Alt_L", "Alt_R"),
+        "mod1": ("Alt_L", "Alt_R"),
+        "super": ("Super_L", "Super_R"),
+        "meta": ("Meta_L", "Meta_R"),
+    }
+    key_names = modifier_key_names.get(name.lower())
+    if key_names is None:
+        raise ValueError(f"unsupported modifier: {name}")
+    return tuple(int(getattr(IBus, f"KEY_{key_name}")) for key_name in key_names)
