@@ -9,13 +9,7 @@ from ibus_voice.engine import VoiceEngine
 from ibus_voice.metadata import (
     AUTHOR,
     COMPONENT_NAME,
-    ENGINE_DESCRIPTION,
-    ENGINE_ICON,
-    ENGINE_LANGUAGE,
-    ENGINE_LAYOUT,
-    ENGINE_LONGNAME,
-    ENGINE_NAME,
-    ENGINE_SYMBOL,
+    ENGINE_METADATA,
     HOMEPAGE,
     LICENSE,
     TEXTDOMAIN,
@@ -207,7 +201,7 @@ if IBus is not None:  # pragma: no branch
             self._engine_id = 0
 
         def do_create_engine(self, engine_name: str):
-            if engine_name != "ibus-voice":
+            if engine_name not in {engine.name for engine in ENGINE_METADATA}:
                 return super().do_create_engine(engine_name)
             self._engine_id += 1
             object_path = f"{self.ENGINE_PATH}/{self._engine_id}"
@@ -238,20 +232,21 @@ class IBusVoiceService:
             command_line="ibus-voice --ibus",
             textdomain=TEXTDOMAIN,
         )
-        component.add_engine(
-            IBus.EngineDesc(
-                name=ENGINE_NAME,
-                longname=ENGINE_LONGNAME,
-                description=ENGINE_DESCRIPTION,
-                language=ENGINE_LANGUAGE,
-                license=LICENSE,
-                author=AUTHOR,
-                icon=ENGINE_ICON,
-                layout=ENGINE_LAYOUT,
-                symbol=ENGINE_SYMBOL,
-                rank=0,
+        for engine in ENGINE_METADATA:
+            component.add_engine(
+                IBus.EngineDesc(
+                    name=engine.name,
+                    longname=engine.longname,
+                    description=engine.description,
+                    language=engine.language,
+                    license=LICENSE,
+                    author=AUTHOR,
+                    icon=engine.icon,
+                    layout=engine.layout,
+                    symbol=engine.symbol,
+                    rank=engine.rank,
+                )
             )
-        )
         bus = IBus.Bus()
         bus.connect("disconnected", self._on_bus_disconnected)
         matcher = HotkeyMatcher(

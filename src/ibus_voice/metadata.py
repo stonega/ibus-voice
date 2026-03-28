@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from xml.sax.saxutils import escape
 
 from ibus_voice import __version__
@@ -24,25 +25,55 @@ TEXTDOMAIN = "ibus-voice"
 CLI_AUTHOR = "Stone"
 
 
+@dataclass(frozen=True)
+class EngineMetadata:
+    name: str
+    longname: str
+    language: str
+    description: str = ENGINE_DESCRIPTION
+    icon: str = ENGINE_ICON
+    layout: str = ENGINE_LAYOUT
+    symbol: str = ENGINE_SYMBOL
+    rank: int = 0
+
+
+ENGINE_METADATA = (
+    EngineMetadata(
+        name=ENGINE_NAME,
+        longname=ENGINE_LONGNAME,
+        language=ENGINE_LANGUAGE,
+    ),
+    EngineMetadata(
+        name="ibus-voice-zh",
+        longname=ENGINE_LONGNAME,
+        language="zh",
+    ),
+)
+
+
 def render_engines_xml() -> str:
-    return f"""<?xml version="1.0" encoding="utf-8"?>
-<engines>
-  <engine>
-    <name>ibus-voice</name>
-    <language>en</language>
-    <license>MIT</license>
-    <author>ibus-voice contributors</author>
-    <icon>audio-input-microphone</icon>
-    <layout>default</layout>
+    engines_xml = "\n".join(
+        f"""  <engine>
+    <name>{engine.name}</name>
+    <language>{engine.language}</language>
+    <license>{LICENSE}</license>
+    <author>{AUTHOR}</author>
+    <icon>{engine.icon}</icon>
+    <layout>{engine.layout}</layout>
     <layout_variant></layout_variant>
     <layout_option></layout_option>
-    <longname translatable="no">ibus-voice</longname>
-    <description>Voice input for IBus</description>
-    <rank>0</rank>
-    <symbol>V</symbol>
+    <longname translatable="no">{engine.longname}</longname>
+    <description>{engine.description}</description>
+    <rank>{engine.rank}</rank>
+    <symbol>{engine.symbol}</symbol>
     <version>{VERSION}</version>
-    <textdomain>ibus-voice</textdomain>
-  </engine>
+    <textdomain>{TEXTDOMAIN}</textdomain>
+  </engine>"""
+        for engine in ENGINE_METADATA
+    )
+    return f"""<?xml version="1.0" encoding="utf-8"?>
+<engines>
+{engines_xml}
 </engines>
 """
 

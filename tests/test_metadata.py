@@ -13,6 +13,8 @@ class MetadataTests(unittest.TestCase):
         rendered = render_engines_xml()
 
         self.assertIn("<name>ibus-voice</name>", rendered)
+        self.assertIn("<name>ibus-voice-zh</name>", rendered)
+        self.assertIn("<language>zh</language>", rendered)
         self.assertIn("<symbol>V</symbol>", rendered)
 
     def test_render_component_xml_contains_exec_commands(self) -> None:

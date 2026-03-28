@@ -21,6 +21,7 @@ ibus restart
 
 4. If `ibus-voice` still does not appear in GNOME Settings, log out and log back in
 5. Open IBus Preferences and add `ibus-voice` as an input method
+   `ibus-voice` is exposed under both English and Chinese language groups so it can be added from either list.
 6. Switch to the `ibus-voice` engine and hold the configured push-to-talk hotkey while speaking, then release it to stop recording
 
 Local install is only for development runs where you control how `ibus-daemon` starts. IBus reads component XML from `/usr/share/ibus/component` by default; custom component directories require `IBUS_COMPONENT_PATH`.
