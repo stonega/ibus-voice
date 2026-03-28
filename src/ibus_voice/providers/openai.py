@@ -5,6 +5,7 @@ from time import monotonic
 
 from ibus_voice.audio import AudioPayload
 from ibus_voice.config import ProviderConfig
+from ibus_voice.providers.base import validate_transcript_text
 from ibus_voice.providers.http import HttpTransport, UrllibTransport
 from ibus_voice.types import ProviderFailure, TranscriptResult
 
@@ -45,9 +46,7 @@ class OpenAIProvider:
             )
         except Exception as exc:  # pragma: no cover - exercised via mocked failures
             raise ProviderFailure(self.name, str(exc), retryable=True) from exc
-        text = str(response.get("text", "")).strip()
-        if not text:
-            raise ProviderFailure(self.name, "provider returned an empty transcript")
+        text = validate_transcript_text(self.name, str(response.get("text", "")))
         return TranscriptResult(
             text=text,
             provider=self.name,
@@ -57,12 +56,18 @@ class OpenAIProvider:
 
 
 def _build_transcription_prompt(dictionary_path) -> str:
+    prompt = (
+        "Transcribe this audio and return plain text only.\n"
+        "Keep the words in the language or languages actually spoken.\n"
+        "Do not translate, summarize, or answer.\n"
+        "Preserve mixed-language phrasing, code-switching, names, and technical terms."
+    )
     if dictionary_path is None:
-        return ""
+        return prompt
     try:
         dictionary = dictionary_path.read_text(encoding="utf-8").strip()
     except FileNotFoundError:
-        return ""
+        return prompt
     if not dictionary:
-        return ""
-    return f"Prefer these canonical terms when transcribing:\n{dictionary}"
+        return prompt
+    return f"{prompt}\nPrefer these canonical terms when transcribing:\n{dictionary}"

@@ -7,6 +7,9 @@ Rules:
 - Return only the final corrected text.
 - Do not add commentary, explanations, quotes, labels, or markdown.
 - Preserve the user's meaning.
+- Keep the output in the language or languages used in the transcript.
+- Do not translate, paraphrase, or force the text into a single language.
+- Preserve code-switching, mixed scripts, names, and technical terms.
 - Prefer canonical spellings from the provided dictionary when relevant.
 - Fix obvious ASR mistakes, punctuation, spacing, and capitalization.
 - Keep technical terms, product names, and API names in their intended casing.

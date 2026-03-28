@@ -40,13 +40,29 @@ key = "space"
 modifiers = ["Control"]
 ```
 
-To switch providers, change `provider.name` to `gemini` and set a Gemini-compatible model and API key.
+To switch providers, change `provider.name` and update the provider-specific fields:
+
+- `openai`: set `api_key` and an OpenAI transcription model such as `gpt-4o-transcribe`
+- `gemini`: set `api_key` and a Gemini model that supports inline audio input
+- `listenhub`: install `coli`, omit `api_key`, and optionally set `model = "sensevoice"` or `model = "whisper-tiny.en"`
 
 Supported provider defaults:
 
 - OpenAI: transcription endpoint using multipart audio upload
 - Gemini: `generateContent` with inline audio data
-- if `dictionary.txt` exists, both providers use it to bias transcription toward canonical terms
+- ListenHub: local `coli asr` command execution with `sensevoice` as the default model
+- OpenAI and Gemini always send a built-in transcription prompt that asks the model to keep the spoken language as-is, avoid translation, and preserve mixed-language dictation
+- if `dictionary.txt` exists, OpenAI and Gemini append it to that transcription prompt to bias recognition toward canonical terms
+- if a remote provider echoes the prompt or returns refusal text instead of a transcript, `ibus-voice` reports a provider failure such as `non_transcript_response` or `audio_not_processed` and does not commit the text
+
+Local ListenHub notes:
+
+- `listenhub` follows the local ASR flow documented at `https://listenhub.ai/docs/zh/skills/asr`
+- install the CLI with `./scripts/install-coli.sh` or `npm install -g @marswave/coli`
+- `ffmpeg` is recommended if you want `coli` to accept non-WAV formats directly, but `ibus-voice` records WAV already
+- the current integration assumes `coli asr` prints the transcript to stdout
+- `dictionary_path` is currently ignored by the local ListenHub provider because the published CLI docs do not describe a dictionary-bias flag
+- `ibus-voice.cli --check` fails fast when `provider.name = "listenhub"` and `coli` is missing from `PATH`
 
 Correction notes:
 
@@ -66,6 +82,7 @@ Prompt authoring notes:
 - keep `user_prompt.txt` mostly structural; it should usually just arrange the transcript, history, and dictionary blocks
 - keep long term names and preferred spellings in `dictionary.txt` instead of turning `system_prompt.txt` into a term list
 - the default `system_prompt.txt` assumes the output is inserted directly at the cursor, so it forbids chatty responses and markdown
+- for multilingual dictation, make the no-translation rule explicit and tell the model to preserve code-switching instead of normalizing everything into one language
 
 History notes:
 
@@ -81,6 +98,7 @@ Hotkey notes:
 
 - `key` maps to an IBus key constant such as `space`
 - `modifiers` maps to IBus modifier masks such as `Control` or `Shift`
+- recording stays active only while the full hotkey chord is held and stops when the key or any required modifier is released
 
 Installer behavior:
 
