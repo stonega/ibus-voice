@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.3.2 - 2026-03-28
+
+- added a Chinese-language IBus engine alias so `ibus-voice` can be added from both English and Chinese input source groups
+- updated IBus service registration to accept both engine names at runtime
+- refreshed getting-started documentation for the dual-language input source registration
+
 ## 0.3.1 - 2026-03-28
 
 - updated GitHub Actions to use newer JavaScript action runtimes and opt into Node 24 now
