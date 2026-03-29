@@ -174,10 +174,9 @@ For GNOME or standard desktop integration, prefer the system installer because I
 
 ```bash
 sudo ./scripts/install-system.sh
-ibus restart
 ```
 
-If `ibus-voice` still does not appear in GNOME Settings after installation, log out and log back in.
+The system installer refreshes the IBus component cache and attempts to restart the logged-in user's IBus session automatically. If `ibus-voice` still does not appear, run `ibus restart`, then log out and log back in if GNOME Settings still has a stale input-source list.
 
 ## Credits
 

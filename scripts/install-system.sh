@@ -8,6 +8,7 @@ APP_DIR="${PREFIX}/share/ibus-voice"
 COMPONENT_DIR="/usr/share/ibus/component"
 TARGET_USER="${SUDO_USER:-${USER}}"
 TARGET_HOME="$(getent passwd "${TARGET_USER}" | cut -d: -f6)"
+REFRESH_SCRIPT_PATH="${APP_DIR}/refresh-ibus.sh"
 if [[ -z "${TARGET_HOME}" ]]; then
   TARGET_HOME="${HOME}"
 fi
@@ -21,6 +22,8 @@ rm -rf "${APP_DIR}/src"
 cp -R "${ROOT_DIR}/src" "${APP_DIR}/src"
 cp "${ROOT_DIR}/README.md" "${APP_DIR}/README.md"
 cp "${ROOT_DIR}/LICENSE" "${APP_DIR}/LICENSE"
+cp "${ROOT_DIR}/scripts/refresh-ibus.sh" "${REFRESH_SCRIPT_PATH}"
+chmod 0755 "${REFRESH_SCRIPT_PATH}"
 
 if [[ ! -f "${CONFIG_DIR}/config.toml" ]]; then
   cp "${ROOT_DIR}/examples/config.toml" "${CONFIG_DIR}/config.toml"
@@ -48,6 +51,8 @@ from ibus_voice.metadata import render_component_xml
 print(render_component_xml(${LAUNCHER_PATH@Q}), end="")
 PY
 
+"${REFRESH_SCRIPT_PATH}" "${TARGET_USER}"
+
 cat <<EOF
 Installed ibus-voice system-wide.
 
@@ -62,8 +67,8 @@ Files:
 
 Next steps:
 1. If you plan to use the ListenHub provider, install coli with: ./scripts/install-coli.sh
-2. Run: ibus restart
-3. Open IBus Preferences
-4. Add the "ibus-voice" input method
+2. Open IBus Preferences or GNOME Input Sources
+3. Add the "ibus-voice" input method
+4. If it does not appear yet, run: ibus restart
 5. If GNOME Settings still does not list it, log out and log back in
 EOF

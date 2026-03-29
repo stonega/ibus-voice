@@ -81,6 +81,8 @@ mkdir -p \
 cp -R "${ROOT_DIR}/src" "${SOURCE_DIR}/src"
 cp "${ROOT_DIR}/README.md" "${SOURCE_DIR}/README.md"
 cp "${ROOT_DIR}/LICENSE" "${SOURCE_DIR}/LICENSE"
+cp "${ROOT_DIR}/scripts/refresh-ibus.sh" "${SOURCE_DIR}/refresh-ibus.sh"
+chmod 0755 "${SOURCE_DIR}/refresh-ibus.sh"
 cp "${ROOT_DIR}/examples/config.toml" "${SOURCE_DIR}/examples/config.toml"
 cp "${ROOT_DIR}/examples/dictionary.txt" "${SOURCE_DIR}/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${SOURCE_DIR}/examples/system_prompt.txt"
@@ -133,6 +135,7 @@ cp -r bin %{buildroot}/usr/lib/ibus-voice/
 cp -r vendor %{buildroot}/usr/lib/ibus-voice/
 cp README.md %{buildroot}/usr/lib/ibus-voice/
 cp LICENSE %{buildroot}/usr/lib/ibus-voice/
+cp refresh-ibus.sh %{buildroot}/usr/lib/ibus-voice/refresh-ibus.sh
 cp ibus-voice %{buildroot}/usr/bin/ibus-voice
 cp ibus-voice.xml %{buildroot}/usr/share/ibus/component/ibus-voice.xml
 cp examples/config.toml %{buildroot}/usr/share/doc/%{name}/examples/config.toml
@@ -148,6 +151,14 @@ cp examples/user_prompt.txt %{buildroot}/usr/share/doc/%{name}/examples/user_pro
 /usr/share/doc/%{name}/examples/dictionary.txt
 /usr/share/doc/%{name}/examples/system_prompt.txt
 /usr/share/doc/%{name}/examples/user_prompt.txt
+
+%post
+/usr/lib/ibus-voice/refresh-ibus.sh "${SUDO_USER:-${USER:-}}"
+
+%postun
+if [ "$1" -eq 0 ]; then
+  /usr/lib/ibus-voice/refresh-ibus.sh "${SUDO_USER:-${USER:-}}"
+fi
 
 %changelog
 * ${RPM_CHANGELOG_DATE} ibus-voice contributors - ${VERSION}-1

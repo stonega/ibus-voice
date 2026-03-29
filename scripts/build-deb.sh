@@ -77,6 +77,8 @@ mkdir -p \
 cp -R "${ROOT_DIR}/src" "${PACKAGE_ROOT}/usr/lib/ibus-voice/"
 cp "${ROOT_DIR}/README.md" "${PACKAGE_ROOT}/usr/lib/ibus-voice/"
 cp "${ROOT_DIR}/LICENSE" "${PACKAGE_ROOT}/usr/lib/ibus-voice/"
+cp "${ROOT_DIR}/scripts/refresh-ibus.sh" "${PACKAGE_ROOT}/usr/lib/ibus-voice/refresh-ibus.sh"
+chmod 0755 "${PACKAGE_ROOT}/usr/lib/ibus-voice/refresh-ibus.sh"
 cp "${ROOT_DIR}/examples/config.toml" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/config.toml"
 cp "${ROOT_DIR}/examples/dictionary.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/system_prompt.txt"
@@ -109,6 +111,26 @@ Depends: python3, ibus
 Recommends: nodejs
 Description: Voice input support for IBus on Linux
 EOF
+
+cat > "${PACKAGE_ROOT}/DEBIAN/postinst" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+/usr/lib/ibus-voice/refresh-ibus.sh "${SUDO_USER:-${USER:-}}"
+exit 0
+EOF
+chmod 0755 "${PACKAGE_ROOT}/DEBIAN/postinst"
+
+cat > "${PACKAGE_ROOT}/DEBIAN/postrm" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$1" == "remove" || "$1" == "purge" ]]; then
+  /usr/lib/ibus-voice/refresh-ibus.sh "${SUDO_USER:-${USER:-}}"
+fi
+exit 0
+EOF
+chmod 0755 "${PACKAGE_ROOT}/DEBIAN/postrm"
 
 dpkg-deb --build --root-owner-group "${PACKAGE_ROOT}" "${ARTIFACT_PATH}" >/dev/null
 
