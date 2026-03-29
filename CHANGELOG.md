@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.0 - 2026-03-29
+
 - replaced the Node-based `coli` local provider integration with an in-repo Python SenseVoice runtime
 - removed the `nodejs` and `npm` runtime assumptions from ListenHub installs and package docs
 - updated package and install scripts to vendor the Python `sherpa-onnx` runtime instead of bundling `@marswave/coli`
