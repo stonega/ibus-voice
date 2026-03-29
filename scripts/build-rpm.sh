@@ -109,6 +109,7 @@ tar -C "${RPM_ROOT}/SOURCES" -czf "${RPM_ROOT}/SOURCES/ibus-voice-${VERSION}.tar
 cat > "${SPEC_PATH}" <<EOF
 %global __requires_exclude_from ^/usr/lib/ibus-voice/(vendor|bin)/.*$
 %global __provides_exclude_from ^/usr/lib/ibus-voice/(vendor|bin)/.*$
+%global debug_package %{nil}
 
 Name: ibus-voice
 Version: ${VERSION}
@@ -153,11 +154,11 @@ cp examples/user_prompt.txt %{buildroot}/usr/share/doc/%{name}/examples/user_pro
 /usr/share/doc/%{name}/examples/user_prompt.txt
 
 %post
-/usr/lib/ibus-voice/refresh-ibus.sh "${SUDO_USER:-${USER:-}}"
+/usr/lib/ibus-voice/refresh-ibus.sh "\${SUDO_USER:-\${USER:-}}"
 
 %postun
-if [ "$1" -eq 0 ]; then
-  /usr/lib/ibus-voice/refresh-ibus.sh "${SUDO_USER:-${USER:-}}"
+if [ "\$1" -eq 0 ]; then
+  /usr/lib/ibus-voice/refresh-ibus.sh "\${SUDO_USER:-\${USER:-}}"
 fi
 
 %changelog
@@ -165,7 +166,7 @@ fi
 - Automated package build
 EOF
 
-rpmbuild \
+QA_RPATHS=$((0x0002|0x0010)) rpmbuild \
   --define "_topdir ${RPM_ROOT}" \
   --define "_tmppath ${TMP_DIR}" \
   -bb "${SPEC_PATH}" >/dev/null
