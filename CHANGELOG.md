@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- refreshed the IBus component cache and attempted an automatic per-user `ibus restart` after system installs so new engines appear without requiring a full reboot in the common case
+- added Debian and RPM package post-install hooks to refresh IBus registration after package installs and removals
+
 ## 0.3.5 - 2026-03-28
 
 - created `~/.config/ibus-voice/config.toml` automatically on first run when the default user config is missing

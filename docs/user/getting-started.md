@@ -13,7 +13,7 @@ System install for GNOME and normal desktop use:
 sudo ./scripts/install-system.sh
 ```
 
-3. Restart IBus:
+3. The installer refreshes IBus automatically. If the engine still does not appear, restart IBus manually:
 
 ```bash
 ibus restart
