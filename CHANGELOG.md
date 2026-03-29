@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- replaced the Node-based `coli` local provider integration with an in-repo Python SenseVoice runtime
+- removed the `nodejs` and `npm` runtime assumptions from ListenHub installs and package docs
+- updated package and install scripts to vendor the Python `sherpa-onnx` runtime instead of bundling `@marswave/coli`
 - refreshed the IBus component cache and attempted an automatic per-user `ibus restart` after system installs so new engines appear without requiring a full reboot in the common case
 - added Debian and RPM package post-install hooks to refresh IBus registration after package installs and removals
 

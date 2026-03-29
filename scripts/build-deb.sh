@@ -15,11 +15,10 @@ PY
 BUILD_DIR="${ROOT_DIR}/.dist/deb"
 PACKAGE_DIR="${ROOT_DIR}/.dist/packages"
 PACKAGE_ROOT="${BUILD_DIR}/ibus-voice_${VERSION}"
-COLI_STAGE_DIR="${BUILD_DIR}/coli-stage"
+LOCAL_ASR_STAGE_DIR="${BUILD_DIR}/local-asr-stage"
 
 HOST_ARCH="$(uname -m)"
 DEB_ARCH="${TARGET_DEB_ARCH:-}"
-NODE_ARCH="${TARGET_NODE_ARCH:-}"
 
 if [[ -z "${DEB_ARCH}" ]]; then
   case "${HOST_ARCH}" in
@@ -36,21 +35,6 @@ if [[ -z "${DEB_ARCH}" ]]; then
   esac
 fi
 
-if [[ -z "${NODE_ARCH}" ]]; then
-  case "${DEB_ARCH}" in
-    amd64|x86_64)
-      NODE_ARCH="x64"
-      ;;
-    arm64|aarch64)
-      NODE_ARCH="arm64"
-      ;;
-    *)
-      echo "error: unsupported Debian architecture '${DEB_ARCH}'" >&2
-      exit 1
-      ;;
-  esac
-fi
-
 ARTIFACT_PATH="${PACKAGE_DIR}/ibus-voice_${VERSION}_${DEB_ARCH}.deb"
 
 if ! command -v dpkg-deb >/dev/null 2>&1; then
@@ -58,9 +42,9 @@ if ! command -v dpkg-deb >/dev/null 2>&1; then
   echo "Install dpkg tooling and rerun ./scripts/build-deb.sh" >&2
   exit 1
 fi
-if ! command -v npm >/dev/null 2>&1; then
-  echo "error: npm is required to bundle @marswave/coli into Debian packages" >&2
-  echo "Install npm and rerun ./scripts/build-deb.sh" >&2
+if ! /usr/bin/python3 -m pip --version >/dev/null 2>&1; then
+  echo "error: python3 -m pip is required to bundle the local ASR runtime" >&2
+  echo "Install pip for python3 and rerun ./scripts/build-deb.sh" >&2
   exit 1
 fi
 
@@ -83,13 +67,12 @@ cp "${ROOT_DIR}/examples/config.toml" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/
 cp "${ROOT_DIR}/examples/dictionary.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/system_prompt.txt"
 cp "${ROOT_DIR}/examples/user_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/user_prompt.txt"
-NPM_CONFIG_PLATFORM=linux NPM_CONFIG_ARCH="${NODE_ARCH}" \
-  "${ROOT_DIR}/scripts/stage-coli.sh" "${COLI_STAGE_DIR}" "${PACKAGE_ROOT}/usr/lib/ibus-voice"
+"${ROOT_DIR}/scripts/stage-local-asr.sh" "${LOCAL_ASR_STAGE_DIR}" "${PACKAGE_ROOT}/usr/lib/ibus-voice"
 
 cat > "${PACKAGE_ROOT}/usr/bin/ibus-voice" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-export PYTHONPATH="/usr/lib/ibus-voice/src${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="/usr/lib/ibus-voice/vendor:/usr/lib/ibus-voice/src${PYTHONPATH:+:$PYTHONPATH}"
 exec /usr/bin/python3 -m ibus_voice.cli "$@"
 EOF
 chmod 0755 "${PACKAGE_ROOT}/usr/bin/ibus-voice"
@@ -108,7 +91,6 @@ Priority: optional
 Architecture: ${DEB_ARCH}
 Maintainer: ibus-voice contributors
 Depends: python3, ibus
-Recommends: nodejs
 Description: Voice input support for IBus on Linux
 EOF
 

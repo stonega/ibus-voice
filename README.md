@@ -70,7 +70,7 @@ If you are building this project, useful implementation areas will likely includ
 - a push-to-talk engine state machine
 - PyAudio-based recorder integration
 - OpenAI and Gemini provider adapters
-- a local ListenHub `coli asr` provider adapter
+- a built-in local ListenHub SenseVoice provider adapter
 - dictionary-aware OpenAI and Gemini transcription prompting
 - optional OpenAI-compatible correction after transcription with transcript history context
 - an IBus engine registration and hotkey handling layer
@@ -97,7 +97,7 @@ For the `v0.3.5` milestone:
 Known limitations for `v0.3.5`:
 
 - desktop integration has unit coverage but limited live distro validation
-- local speech support depends on an installed `coli` binary for the ListenHub provider
+- local speech support currently supports only the built-in `sensevoice` model path
 - only final text commit is implemented; partial transcript display is not
 
 ## Development
@@ -114,13 +114,13 @@ Validate a config file with:
 PYTHONPATH=src python3 -m ibus_voice.cli --config examples/config.toml --check
 ```
 
-Install the ListenHub CLI dependency when using the local provider:
+Install local Python runtime dependencies for development with:
 
 ```bash
-./scripts/install-coli.sh
+python3 -m pip install -e '.[runtime,local]'
 ```
 
-Debian and RPM package builds bundle the ListenHub CLI into the package at build time. Install `nodejs` if you want to use the bundled local ListenHub `coli` runtime.
+Local and packaged installs bundle the Python ASR runtime instead of requiring Node.js. The SenseVoice model downloads automatically on first local-provider use.
 
 If correction is configured and enabled, `ibus-voice` will:
 
@@ -165,6 +165,7 @@ Packaging prerequisites:
 
 - `./scripts/build-deb.sh` requires `dpkg-deb`
 - `./scripts/build-rpm.sh` requires `rpmbuild`
+- both package builders require `python3 -m pip`
 
 The packaged launcher is:
 
@@ -183,10 +184,6 @@ The system installer refreshes the IBus component cache and attempts to restart 
 Feature-gap analysis for this phase was informed by the Koe project and its public documentation:
 
 - https://koe.li/docs
-
-The local ListenHub integration also builds on the `coli` CLI maintained by marswaveai:
-
-- https://github.com/marswaveai/coli
 
 `ibus-voice` remains a Linux IBus project with its own architecture and scope.
 

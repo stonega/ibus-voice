@@ -8,9 +8,10 @@ from urllib.error import HTTPError
 
 from ibus_voice.audio import AudioPayload
 from ibus_voice.config import ProviderConfig
+from ibus_voice.local_asr import LocalAsrError
 from ibus_voice.providers.factory import build_provider
 from ibus_voice.providers.gemini import GeminiProvider
-from ibus_voice.providers.listenhub import ListenHubProvider, find_coli_binary
+from ibus_voice.providers.listenhub import ListenHubProvider, ensure_local_provider_ready
 from ibus_voice.providers.openai import OpenAIProvider
 from ibus_voice.types import ProviderFailure
 
@@ -54,46 +55,17 @@ class FakeTransport:
         return self.response
 
 
-class FakeRunner:
-    def __init__(
-        self,
-        returncode: int = 0,
-        stdout: str = "",
-        stderr: str = "",
-        failure: Exception | None = None,
-    ) -> None:
-        self.returncode = returncode
-        self.stdout = stdout
-        self.stderr = stderr
-        self.failure = failure
-        self.last_command: list[str] | None = None
-        self.last_timeout: float | None = None
-
-    def run(self, command: list[str], timeout: float) -> tuple[int, str, str]:
-        self.last_command = command
-        self.last_timeout = timeout
-        if self.failure is not None:
-            raise self.failure
-        return self.returncode, self.stdout, self.stderr
-
-
 class ProviderTests(unittest.TestCase):
-    def test_find_coli_binary_prefers_bundled_wrapper(self) -> None:
-        with patch("ibus_voice.providers.listenhub.bundled_coli_binary_path", return_value="/opt/ibus-voice/bin/coli"):
-            with patch("ibus_voice.providers.listenhub.has_node_runtime", return_value=True):
-                with patch("ibus_voice.providers.listenhub.shutil.which", return_value="/usr/bin/coli"):
-                    self.assertEqual(find_coli_binary(), "/opt/ibus-voice/bin/coli")
+    def test_ensure_local_provider_ready_returns_runtime_status(self) -> None:
+        with patch("ibus_voice.providers.listenhub.runtime_status", return_value="auto-download"):
+            self.assertEqual(ensure_local_provider_ready("sensevoice"), "auto-download")
 
-    def test_find_coli_binary_falls_back_to_path_when_node_missing(self) -> None:
-        with patch("ibus_voice.providers.listenhub.bundled_coli_binary_path", return_value="/opt/ibus-voice/bin/coli"):
-            with patch("ibus_voice.providers.listenhub.has_node_runtime", return_value=False):
-                with patch("ibus_voice.providers.listenhub.shutil.which", return_value="/usr/bin/coli"):
-                    self.assertEqual(find_coli_binary(), "/usr/bin/coli")
+    def test_ensure_local_provider_ready_wraps_runtime_errors(self) -> None:
+        with patch("ibus_voice.providers.listenhub.runtime_status", side_effect=LocalAsrError("boom")):
+            with self.assertRaises(ProviderFailure) as ctx:
+                ensure_local_provider_ready("sensevoice")
 
-    def test_find_coli_binary_falls_back_to_path(self) -> None:
-        with patch("ibus_voice.providers.listenhub.bundled_coli_binary_path", return_value=None):
-            with patch("ibus_voice.providers.listenhub.shutil.which", return_value="/usr/bin/coli"):
-                self.assertEqual(find_coli_binary(), "/usr/bin/coli")
+        self.assertIn("boom", str(ctx.exception))
 
     def test_openai_normalizes_text(self) -> None:
         provider = OpenAIProvider(
@@ -201,44 +173,37 @@ class ProviderTests(unittest.TestCase):
 
         self.assertIn("audio_not_processed", str(ctx.exception))
 
-    def test_listenhub_uses_coli_cli(self) -> None:
-        runner = FakeRunner(stdout=" transcript ")
-        provider = ListenHubProvider(
-            config=ProviderConfig(name="listenhub", model="sensevoice"),
-            runner=runner,
-        )
+    def test_listenhub_uses_local_asr(self) -> None:
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="sensevoice"))
 
-        with patch("ibus_voice.providers.listenhub.ensure_coli_available", return_value="/usr/bin/coli"):
+        with patch("ibus_voice.providers.listenhub.transcribe_wav_file_with_timeout", return_value=" transcript "):
             result = provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
 
         self.assertEqual(result.text, "transcript")
         self.assertEqual(result.provider, "listenhub")
-        self.assertEqual(runner.last_command[:4], ["/usr/bin/coli", "asr", "--model", "sensevoice"])
-        self.assertEqual(runner.last_command[-1][-10:], "speech.wav")
-        self.assertEqual(runner.last_timeout, 30.0)
+        self.assertEqual(result.metadata["engine"], "local-sensevoice")
+        self.assertEqual(result.metadata["model"], "sensevoice")
 
-    def test_listenhub_wraps_missing_coli_binary(self) -> None:
-        provider = ListenHubProvider(
-            config=ProviderConfig(name="listenhub", model="sensevoice"),
-            runner=FakeRunner(failure=FileNotFoundError("coli")),
-        )
+    def test_listenhub_wraps_local_runtime_failure(self) -> None:
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="sensevoice"))
 
-        with self.assertRaises(ProviderFailure) as ctx:
-            provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
-
-        self.assertIn("install @marswave/coli", str(ctx.exception))
-
-    def test_listenhub_returns_stderr_on_failure(self) -> None:
-        provider = ListenHubProvider(
-            config=ProviderConfig(name="listenhub", model="sensevoice"),
-            runner=FakeRunner(returncode=2, stderr="bad audio"),
-        )
-
-        with patch("ibus_voice.providers.listenhub.ensure_coli_available", return_value="/usr/bin/coli"):
+        with patch(
+            "ibus_voice.providers.listenhub.transcribe_wav_file_with_timeout",
+            side_effect=RuntimeError("install failed"),
+        ):
             with self.assertRaises(ProviderFailure) as ctx:
                 provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
 
-        self.assertIn("bad audio", str(ctx.exception))
+        self.assertIn("install failed", str(ctx.exception))
+
+    def test_listenhub_returns_empty_transcript_failure(self) -> None:
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="sensevoice"))
+
+        with patch("ibus_voice.providers.listenhub.transcribe_wav_file_with_timeout", return_value=""):
+            with self.assertRaises(ProviderFailure) as ctx:
+                provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
+
+        self.assertIn("empty transcript", str(ctx.exception))
 
     def test_provider_factory_builds_listenhub(self) -> None:
         provider = build_provider(ProviderConfig(name="listenhub", model="sensevoice"))

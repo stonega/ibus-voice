@@ -8,6 +8,7 @@
 - `correction.py`: optional OpenAI-compatible transcript correction
 - `engine.py`: state machine for push-to-talk dictation
 - `history.py`: SQLite persistence for completed dictation sessions
+- `local_asr.py`: built-in SenseVoice model management and offline decoding
 - `providers/`: normalized speech backend adapters
 - `ibus_service.py`: IBus engine registration, hotkey matching, and commit boundary
 
@@ -29,7 +30,7 @@
 - correction token usage is persisted in session metadata when the correction response includes `usage`
 - OpenAI receives multipart file uploads
 - Gemini receives inline audio data through `generateContent`
-- ListenHub shells out to the local `coli asr` CLI with a temporary WAV file
+- ListenHub uses an in-repo Python SenseVoice runtime and auto-downloads the local model on first use when needed
 
 ## Current Gaps
 

@@ -12,7 +12,7 @@ from ibus_voice.engine import VoiceEngine
 from ibus_voice.history import DEFAULT_HISTORY_PATH, SQLiteSessionHistory, format_completed_sessions
 from ibus_voice.ibus_service import IBusVoiceService, TextCommitter
 from ibus_voice.metadata import render_engines_xml, render_version_text
-from ibus_voice.providers.listenhub import ensure_coli_available
+from ibus_voice.providers.listenhub import ensure_local_provider_ready
 from ibus_voice.providers import build_provider
 from ibus_voice.types import ProviderFailure
 
@@ -56,11 +56,11 @@ def main(argv: list[str] | None = None) -> int:
         dependency_status = ""
         if config.provider.name.lower() == "listenhub":
             try:
-                coli_path = ensure_coli_available()
+                local_runtime = ensure_local_provider_ready(config.provider.model)
             except ProviderFailure as exc:
                 print(f"config check failed: {exc}", file=sys.stderr)
                 return 1
-            dependency_status = f" coli={coli_path}"
+            dependency_status = f" local_asr={local_runtime}"
         print(
             "config ok: "
             f"provider={config.provider.name} model={config.provider.model} correction={correction_status}{dependency_status}"

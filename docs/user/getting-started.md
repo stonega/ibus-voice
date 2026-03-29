@@ -6,7 +6,7 @@ System install for GNOME and normal desktop use:
 
 1. Review and edit `examples/config.toml` or let the installer copy it to `~/.config/ibus-voice/config.toml`
    If you want transcript correction, also copy the example prompt files into `~/.config/ibus-voice/`.
-   If you plan to use the ListenHub provider with the install scripts instead of a package build, install `coli` with `./scripts/install-coli.sh` before the final config check.
+   If you plan to use the ListenHub provider from source, install the local Python dependencies before the final config check.
 2. Run:
 
 ```bash
@@ -39,7 +39,7 @@ Useful commands:
 PYTHONPATH=src python3 -m ibus_voice.cli --xml
 PYTHONPATH=src python3 -m ibus_voice.cli --config examples/config.toml --check
 PYTHONPATH=src python3 -m ibus_voice.cli --history
-./scripts/install-coli.sh
+python3 -m pip install -e '.[runtime,local]'
 ```
 
 Package builds:
@@ -49,7 +49,7 @@ Package builds:
 ./scripts/build-rpm.sh
 ```
 
-`build-deb.sh` requires `dpkg-deb` and `npm`. `build-rpm.sh` requires `rpmbuild` and `npm`.
+`build-deb.sh` requires `dpkg-deb` and `python3 -m pip`. `build-rpm.sh` requires `rpmbuild` and `python3 -m pip`.
 
 The installed CLI launcher is `ibus-voice`.
 
@@ -57,4 +57,4 @@ With correction disabled, `ibus-voice` commits the raw speech-to-text result.
 
 With correction enabled, it sends the transcript to an OpenAI-compatible text model and commits the corrected result. If that second step fails, the raw transcript is still committed.
 
-With `provider.name = "listenhub"`, `--check` validates that `coli` is either bundled with the installed app or available on `PATH`.
+With `provider.name = "listenhub"`, `--check` validates that the local Python ASR runtime is available and reports whether the SenseVoice model is already installed or will auto-download on first use.

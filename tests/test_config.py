@@ -61,6 +61,20 @@ class ParseConfigTests(unittest.TestCase):
             Path("/tmp/ibus-voice-config/dictionary.txt").resolve(),
         )
 
+    def test_parse_listenhub_provider_rejects_non_sensevoice_model(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            parse_config(
+                {
+                    "provider": {
+                        "name": "listenhub",
+                        "model": "whisper-tiny.en",
+                    },
+                },
+                base_dir=Path("/tmp/ibus-voice-config"),
+            )
+
+        self.assertIn('provider.model for listenhub must be "sensevoice"', str(ctx.exception))
+
     def test_parse_correction_config_with_relative_paths(self) -> None:
         config = parse_config(
             {

@@ -193,6 +193,8 @@ def _parse_provider_config(raw: object, *, base_dir: Path) -> ProviderConfig:
             raise ValueError("provider.api_key and provider.model are required for remote providers")
     elif normalized_name == "listenhub":
         model = model or "sensevoice"
+        if model != "sensevoice":
+            raise ValueError('provider.model for listenhub must be "sensevoice"')
     elif not model:
         raise ValueError("provider.model is required")
 

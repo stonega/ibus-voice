@@ -18,11 +18,10 @@ SOURCE_DIR="${RPM_ROOT}/SOURCES/ibus-voice-${VERSION}"
 SPEC_PATH="${RPM_ROOT}/SPECS/ibus-voice.spec"
 TMP_DIR="${RPM_ROOT}/tmp"
 RPM_CHANGELOG_DATE="$(LC_ALL=C date '+%a %b %d %Y')"
-COLI_STAGE_DIR="${RPM_ROOT}/coli-stage"
+LOCAL_ASR_STAGE_DIR="${RPM_ROOT}/local-asr-stage"
 
 HOST_ARCH="$(uname -m)"
 RPM_ARCH="${TARGET_RPM_ARCH:-}"
-NODE_ARCH="${TARGET_NODE_ARCH:-}"
 
 if [[ -z "${RPM_ARCH}" ]]; then
   case "${HOST_ARCH}" in
@@ -39,29 +38,14 @@ if [[ -z "${RPM_ARCH}" ]]; then
   esac
 fi
 
-if [[ -z "${NODE_ARCH}" ]]; then
-  case "${RPM_ARCH}" in
-    x86_64|amd64)
-      NODE_ARCH="x64"
-      ;;
-    aarch64|arm64)
-      NODE_ARCH="arm64"
-      ;;
-    *)
-      echo "error: unsupported RPM architecture '${RPM_ARCH}'" >&2
-      exit 1
-      ;;
-  esac
-fi
-
 if ! command -v rpmbuild >/dev/null 2>&1; then
   echo "error: rpmbuild is required to build RPM packages" >&2
   echo "Install rpm-build tooling and rerun ./scripts/build-rpm.sh" >&2
   exit 1
 fi
-if ! command -v npm >/dev/null 2>&1; then
-  echo "error: npm is required to bundle @marswave/coli into RPM packages" >&2
-  echo "Install npm and rerun ./scripts/build-rpm.sh" >&2
+if ! /usr/bin/python3 -m pip --version >/dev/null 2>&1; then
+  echo "error: python3 -m pip is required to bundle the local ASR runtime" >&2
+  echo "Install pip for python3 and rerun ./scripts/build-rpm.sh" >&2
   exit 1
 fi
 
@@ -87,13 +71,12 @@ cp "${ROOT_DIR}/examples/config.toml" "${SOURCE_DIR}/examples/config.toml"
 cp "${ROOT_DIR}/examples/dictionary.txt" "${SOURCE_DIR}/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${SOURCE_DIR}/examples/system_prompt.txt"
 cp "${ROOT_DIR}/examples/user_prompt.txt" "${SOURCE_DIR}/examples/user_prompt.txt"
-NPM_CONFIG_PLATFORM=linux NPM_CONFIG_ARCH="${NODE_ARCH}" \
-  "${ROOT_DIR}/scripts/stage-coli.sh" "${COLI_STAGE_DIR}" "${SOURCE_DIR}"
+"${ROOT_DIR}/scripts/stage-local-asr.sh" "${LOCAL_ASR_STAGE_DIR}" "${SOURCE_DIR}"
 
 cat > "${SOURCE_DIR}/ibus-voice" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-export PYTHONPATH="/usr/lib/ibus-voice/src${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="/usr/lib/ibus-voice/vendor:/usr/lib/ibus-voice/src${PYTHONPATH:+:$PYTHONPATH}"
 exec /usr/bin/python3 -m ibus_voice.cli "$@"
 EOF
 chmod 0755 "${SOURCE_DIR}/ibus-voice"
@@ -107,8 +90,8 @@ PY
 tar -C "${RPM_ROOT}/SOURCES" -czf "${RPM_ROOT}/SOURCES/ibus-voice-${VERSION}.tar.gz" "ibus-voice-${VERSION}"
 
 cat > "${SPEC_PATH}" <<EOF
-%global __requires_exclude_from ^/usr/lib/ibus-voice/(vendor|bin)/.*$
-%global __provides_exclude_from ^/usr/lib/ibus-voice/(vendor|bin)/.*$
+%global __requires_exclude_from ^/usr/lib/ibus-voice/vendor/.*$
+%global __provides_exclude_from ^/usr/lib/ibus-voice/vendor/.*$
 %global debug_package %{nil}
 
 Name: ibus-voice
@@ -118,7 +101,7 @@ Summary: Voice input support for IBus on Linux
 License: MIT
 BuildArch: ${RPM_ARCH}
 Source0: %{name}-%{version}.tar.gz
-Requires: ibus, python3, nodejs
+Requires: ibus, python3
 
 %description
 Voice input support for IBus on Linux.
@@ -132,7 +115,6 @@ mkdir -p %{buildroot}/usr/bin
 mkdir -p %{buildroot}/usr/share/ibus/component
 mkdir -p %{buildroot}/usr/share/doc/%{name}/examples
 cp -r src %{buildroot}/usr/lib/ibus-voice/
-cp -r bin %{buildroot}/usr/lib/ibus-voice/
 cp -r vendor %{buildroot}/usr/lib/ibus-voice/
 cp README.md %{buildroot}/usr/lib/ibus-voice/
 cp LICENSE %{buildroot}/usr/lib/ibus-voice/

@@ -33,6 +33,9 @@ Issues = "https://github.com/stonega/ibus-voice/issues"
 runtime = [
   "PyAudio>=0.2.14",
 ]
+local = [
+  "sherpa-onnx>=1.12.0",
+]
 
 [project.scripts]
 ibus-voice = "ibus_voice.cli:main"

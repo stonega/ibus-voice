@@ -43,7 +43,7 @@ modifiers = ["Control"]
 
 To switch providers, change `provider.name` and update the provider-specific fields:
 
-- `listenhub`: install `coli`, omit `api_key`, and optionally set `model = "sensevoice"` or `model = "whisper-tiny.en"`
+- `listenhub`: omit `api_key` and keep `model = "sensevoice"`
 - `openai`: set `api_key` and an OpenAI transcription model such as `gpt-4o-transcribe`
 - `gemini`: set `api_key` and a Gemini model that supports inline audio input
 
@@ -53,7 +53,7 @@ Supported provider defaults:
 
 - OpenAI: transcription endpoint using multipart audio upload
 - Gemini: `generateContent` with inline audio data
-- ListenHub: local `coli asr` command execution with `sensevoice` as the default model
+- ListenHub: built-in local SenseVoice execution with `sensevoice` as the default model
 - OpenAI and Gemini always send a built-in transcription prompt that asks the model to keep the spoken language as-is, avoid translation, and preserve mixed-language dictation
 - if `dictionary.txt` exists, OpenAI and Gemini append it to that transcription prompt to bias recognition toward canonical terms
 - if a remote provider echoes the prompt or returns refusal text instead of a transcript, `ibus-voice` reports a provider failure such as `non_transcript_response` or `audio_not_processed` and does not commit the text
@@ -61,12 +61,13 @@ Supported provider defaults:
 Local ListenHub notes:
 
 - `listenhub` follows the local ASR flow documented at `https://listenhub.ai/docs/zh/skills/asr`
-- install the CLI with `./scripts/install-coli.sh` or `npm install -g @marswave/coli`
-- Debian and RPM package builds bundle `@marswave/coli` into the package during the build; install `nodejs` if you want to use the bundled local CLI at runtime
-- `ffmpeg` is recommended if you want `coli` to accept non-WAV formats directly, but `ibus-voice` records WAV already
-- the current integration assumes `coli asr` prints the transcript to stdout
+- local ASR uses the Python `sherpa-onnx` runtime instead of an external Node CLI
+- `sensevoice` is the only supported local model in the current in-repo implementation
+- the SenseVoice model is stored under `~/.local/share/ibus-voice/models/` by default
+- the model downloads automatically on first local-provider use if it is not installed yet
+- local ASR consumes the recorded WAV payload directly; no `ffmpeg` conversion step is used
 - `dictionary_path` is currently ignored by the local ListenHub provider because the published CLI docs do not describe a dictionary-bias flag
-- `ibus-voice.cli --check` fails fast when `provider.name = "listenhub"` and `coli` is neither bundled with the app nor available on `PATH`
+- `ibus-voice.cli --check` fails fast when `provider.name = "listenhub"` and the local Python ASR runtime is missing
 
 Correction notes:
 

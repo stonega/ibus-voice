@@ -106,13 +106,13 @@ path = "state/history.db"
         output = io.StringIO()
         with patch("ibus_voice.cli.load_config", return_value=config), \
              patch("ibus_voice.cli.build_provider", return_value=object()), \
-             patch("ibus_voice.cli.ensure_coli_available", return_value="/usr/local/bin/coli"):
+             patch("ibus_voice.cli.ensure_local_provider_ready", return_value="auto-download"):
             with redirect_stdout(output):
                 exit_code = main(["--check"])
 
         self.assertEqual(exit_code, 0)
         self.assertIn("provider=listenhub", output.getvalue())
-        self.assertIn("coli=/usr/local/bin/coli", output.getvalue())
+        self.assertIn("local_asr=auto-download", output.getvalue())
 
     def test_check_command_fails_cleanly_when_listenhub_binary_is_missing(self) -> None:
         config = AppConfig(
@@ -126,11 +126,11 @@ path = "state/history.db"
         stderr = io.StringIO()
         with patch("ibus_voice.cli.load_config", return_value=config), \
              patch("ibus_voice.cli.build_provider", return_value=object()), \
-             patch("ibus_voice.cli.ensure_coli_available", side_effect=ProviderFailure("listenhub", "missing coli")):
+             patch("ibus_voice.cli.ensure_local_provider_ready", side_effect=ProviderFailure("listenhub", "missing runtime")):
             with redirect_stdout(stdout), redirect_stderr(stderr):
                 exit_code = main(["--check"])
 
         self.assertEqual(exit_code, 1)
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn("config check failed:", stderr.getvalue())
-        self.assertIn("missing coli", stderr.getvalue())
+        self.assertIn("missing runtime", stderr.getvalue())
