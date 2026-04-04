@@ -65,6 +65,48 @@ For GNOME or standard desktop integration, prefer the system installer because I
 sudo ./scripts/install-system.sh
 ```
 
+## Config Files
+
+The installers and first run use `~/.config/ibus-voice/` as the default config directory.
+
+- `config.toml`: main runtime configuration
+- `dictionary.txt`: canonical terms used for transcription bias and correction prompting; default entries include `IBus` and `ibus-voice`
+- `system_prompt.txt`: stable correction policy
+- `user_prompt.txt`: prompt template that inserts transcript, history, and dictionary content
+
+Tip: after changing `config.toml`, restart IBus before testing the new settings so the running `ibus-voice` engine reloads the updated config.
+
+See `docs/user/configuration.md` for the full configuration reference.
+
+## CLI Usage
+
+The installed launcher is `ibus-voice`.
+
+```bash
+ibus-voice --check
+ibus-voice --add-word "OpenAI"
+ibus-voice --config ~/.config/ibus-voice/config.toml --check
+ibus-voice --xml
+ibus-voice --version
+ibus-voice --history
+ibus-voice --history --history-limit 50
+ibus-voice --history-path ~/.config/ibus-voice/history.db --history
+```
+
+- `--check`: validate the config and provider dependencies
+- `--add-word`: append a canonical term to the configured dictionary file if it is not already present
+- `--xml`: print the IBus engine XML metadata
+- `--version`: print CLI version information
+- `--history`: print completed dictation session history
+- `--config`: use a specific `config.toml`
+- `--history-path`: read history from a specific SQLite database
+
+## Usage
+
+After installing, add `ibus-voice` from your desktop environment's input source settings.
+
+Once `ibus-voice` is selected as an input source, long-press `Ctrl+Space` to get started with voice input.
+
 ## Credits
 
 Feature-gap analysis for this phase was informed by the Koe project and its public documentation:
