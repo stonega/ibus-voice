@@ -1,106 +1,8 @@
 # ibus-voice
 
-`ibus-voice` is a Linux project that adds voice input support to the IBus input framework.
+`ibus-voice` is a Linux voice dictation project for the IBus input framework. It is intended to let users speak into a microphone, transcribe that audio with a local or remote speech-to-text backend, and commit the recognized text into the currently focused application through IBus.
 
-The goal is to make spoken dictation available as a normal input method so text can be entered into desktop applications through IBus, similar to switching to any other keyboard or IME.
-
-## Goals
-
-- Integrate voice input with the Linux desktop through IBus
-- Support dictation into standard text fields and applications
-- Provide a practical path for local or remote speech-to-text backends
-- Keep the user workflow simple: enable the engine, start speaking, and insert text
-
-## Scope
-
-This repository is expected to contain:
-
-- An IBus engine or bridge process
-- Audio capture integration for Linux
-- Speech-to-text backend integration
-- Text commit and candidate handling through IBus APIs
-- Configuration for language, trigger keys, and backend selection
-
-## High-Level Design
-
-A typical architecture for this project would look like this:
-
-1. Capture microphone audio from the Linux desktop
-2. Stream or batch that audio to a speech recognition backend
-3. Convert recognition results into committed or preedit text
-4. Send the text into the active application through IBus
-
-Depending on the implementation, the backend may be:
-
-- Fully local, for privacy and offline use
-- Remote, for higher accuracy or lower local CPU usage
-- Pluggable, so users can choose either option
-
-## Use Cases
-
-- Dictation in editors, browsers, chat apps, and terminals
-- Hands-free text entry
-- Accessibility support for users who prefer speech over typing
-- Mixed workflows where users switch between keyboard input and voice input
-
-## Expected Features
-
-- Start and stop voice dictation
-- Insert recognized text at the cursor
-- Support multiple languages
-- Optional punctuation commands
-- Configurable hotkeys or triggers
-- Error handling for microphone and backend failures
-
-## Development Notes
-
-If you are building this project, useful implementation areas will likely include:
-
-- `ibus` engine integration
-- D-Bus communication
-- Microphone capture on Linux
-- Speech recognition backend adapters
-- Packaging and installation for desktop environments
-
-## v0.5.0 Status
-
-`v0.5.0` is the current packaged alpha milestone. It includes:
-
-- config loading
-- a push-to-talk engine state machine
-- PyAudio-based recorder integration
-- OpenAI and Gemini provider adapters
-- a built-in local ListenHub SenseVoice provider adapter
-- dictionary-aware OpenAI and Gemini transcription prompting
-- optional OpenAI-compatible correction after transcription with transcript history context
-- an IBus engine registration and hotkey handling layer
-- clearer IBus auxiliary status text during listening and first-use local runtime initialization
-- SQLite history for completed sessions at `~/.config/ibus-voice/history.db`
-- local and system install scripts
-- Debian and RPM packaging scripts
-- unit tests for core behavior
-
-The IBus desktop wiring is present in the codebase, but desktop and distro validation is still limited. This release should be treated as an alpha milestone for Linux users who are comfortable testing an early IBus engine.
-
-Recent design work in this repository has also started closing feature gaps identified by reviewing the Koe voice input project and its public documentation, adapted for Linux and IBus rather than copied directly.
-
-## Release Notes
-
-For the `v0.5.0` milestone:
-
-- supported runtime shape is Python 3.11+ on Linux with IBus
-- the interaction model is hold-to-talk dictation: recording runs only while the configured hotkey chord is held
-- speech recognition backends are pluggable and currently include OpenAI, Gemini, and ListenHub adapters
-- new installs default to the local ListenHub provider with the `sensevoice` model
-- the IBus panel now shows `🎙 Listening...` while recording and `🎙 Initing...` when the local runtime is blocking on first-use setup
-- transcript correction is optional and falls back to raw text if correction fails
-- package artifacts can be built locally as `.deb` and `.rpm`
-
-Known limitations for `v0.5.0`:
-
-- desktop integration has unit coverage but limited live distro validation
-- local speech support currently supports only the built-in `sensevoice` model path
-- only final text commit is implemented; partial transcript display is not
+The repository is focused on practical Linux desktop integration: audio capture, backend selection, IBus engine behavior, packaging, and local development workflows.
 
 ## Development
 
@@ -121,18 +23,6 @@ Install local Python runtime dependencies for development with:
 ```bash
 python3 -m pip install -e '.[runtime,local]'
 ```
-
-Local and packaged installs bundle the Python ASR runtime instead of requiring Node.js. The SenseVoice model downloads automatically on first local-provider use.
-
-If correction is configured and enabled, `ibus-voice` will:
-
-1. send recorded audio to the configured speech-to-text provider
-2. optionally send the raw transcript to a text correction model
-3. commit the cleaned text through IBus
-
-If the correction step is disabled or fails, the raw transcript is still committed.
-
-Example prompt files are provided in `examples/system_prompt.txt`, `examples/user_prompt.txt`, and `examples/dictionary.txt`. The intended split is simple: `system_prompt.txt` carries stable correction policy, `user_prompt.txt` stays structural, and `dictionary.txt` holds canonical terms.
 
 Print IBus engine metadata XML with:
 
@@ -169,17 +59,11 @@ Packaging prerequisites:
 - `./scripts/build-rpm.sh` requires `rpmbuild`
 - both package builders require `python3 -m pip`
 
-The packaged launcher is:
-
-- `ibus-voice`
-
 For GNOME or standard desktop integration, prefer the system installer because IBus reads component XML from `/usr/share/ibus/component` by default:
 
 ```bash
 sudo ./scripts/install-system.sh
 ```
-
-The system installer refreshes the IBus component cache and attempts to restart the logged-in user's IBus session automatically. If `ibus-voice` still does not appear, run `ibus restart`, then log out and log back in if GNOME Settings still has a stale input-source list.
 
 ## Credits
 
