@@ -48,6 +48,8 @@ If `--check` says `install the Python package 'sherpa-onnx'` even though you alr
 /usr/bin/python3 -m pip install sherpa-onnx
 ```
 
+Packaged installs also include an offline `sherpa-onnx` wheel bundle. If the vendored runtime does not match the target machine's Python minor version, `ibus-voice` will try to reinstall the matching wheel into `~/.local/share/ibus-voice/runtime/` on first local-provider use.
+
 Package builds:
 
 ```bash

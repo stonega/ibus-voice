@@ -3,7 +3,8 @@
 ## Unreleased
 
 - made package builds use a configurable build-time Python interpreter so GitHub Actions can vendor `sherpa-onnx` against the intended ABI instead of always using `/usr/bin/python3`
-- added a CI check that fails package builds when the staged `sherpa-onnx` wheel tag does not match the configured GitHub Actions Python version
+- added a CI check that fails package builds when the staged `sherpa-onnx` wheelhouse does not include the configured GitHub Actions Python ABI
+- added an offline packaged-runtime fallback that reinstalls a matching bundled `sherpa-onnx` wheel into the user's local runtime directory when the vendored copy does not match the target machine's Python minor version
 
 ## 0.5.0 - 2026-04-04
 

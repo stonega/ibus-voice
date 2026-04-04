@@ -20,6 +20,7 @@ LOCAL_ASR_STAGE_DIR="${BUILD_DIR}/local-asr-stage"
 
 HOST_ARCH="$(uname -m)"
 DEB_ARCH="${TARGET_DEB_ARCH:-}"
+WHEEL_PLATFORM="${WHEEL_PLATFORM:-}"
 
 if [[ -z "${DEB_ARCH}" ]]; then
   case "${HOST_ARCH}" in
@@ -31,6 +32,21 @@ if [[ -z "${DEB_ARCH}" ]]; then
       ;;
     *)
       echo "error: unsupported architecture '${HOST_ARCH}' for Debian packaging" >&2
+      exit 1
+      ;;
+  esac
+fi
+
+if [[ -z "${WHEEL_PLATFORM}" ]]; then
+  case "${DEB_ARCH}" in
+    amd64)
+      WHEEL_PLATFORM="manylinux2014_x86_64"
+      ;;
+    arm64)
+      WHEEL_PLATFORM="manylinux2014_aarch64"
+      ;;
+    *)
+      echo "error: unsupported Debian architecture '${DEB_ARCH}' for sherpa-onnx wheel staging" >&2
       exit 1
       ;;
   esac
@@ -68,7 +84,7 @@ cp "${ROOT_DIR}/examples/config.toml" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/
 cp "${ROOT_DIR}/examples/dictionary.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/system_prompt.txt"
 cp "${ROOT_DIR}/examples/user_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/user_prompt.txt"
-PYTHON_BIN="${PYTHON_BIN}" "${ROOT_DIR}/scripts/stage-local-asr.sh" "${LOCAL_ASR_STAGE_DIR}" "${PACKAGE_ROOT}/usr/lib/ibus-voice"
+PYTHON_BIN="${PYTHON_BIN}" WHEEL_PLATFORM="${WHEEL_PLATFORM}" "${ROOT_DIR}/scripts/stage-local-asr.sh" "${LOCAL_ASR_STAGE_DIR}" "${PACKAGE_ROOT}/usr/lib/ibus-voice"
 
 cat > "${PACKAGE_ROOT}/usr/bin/ibus-voice" <<'EOF'
 #!/usr/bin/env bash

@@ -69,6 +69,7 @@ Local ListenHub notes:
 - `dictionary_path` is currently ignored by the local ListenHub provider because the published CLI docs do not describe a dictionary-bias flag
 - `ibus-voice.cli --check` fails fast when `provider.name = "listenhub"` and the local Python ASR runtime is missing
 - if you installed `sherpa-onnx` already but the runtime check still fails, install it into the exact interpreter reported by the error; packaged launchers use `/usr/bin/python3`
+- packaged installs also carry a bundled `wheelhouse`; if the shipped vendor copy does not match the target machine's Python minor version, `ibus-voice` attempts a local offline reinstall into `~/.local/share/ibus-voice/runtime/`
 
 Correction notes:
 

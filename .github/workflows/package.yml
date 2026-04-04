@@ -74,15 +74,14 @@ jobs:
           pkg=".dist/packages/ibus-voice-${version}-1.${{ matrix.rpm_arch }}.rpm"
           test "$(rpm -qp --queryformat '%{ARCH}' "$pkg")" = "${{ matrix.rpm_arch }}"
 
-      - name: Verify staged sherpa-onnx wheel ABI matches CI Python
+      - name: Verify staged sherpa-onnx wheelhouse includes CI Python ABI
         run: |
           python_tag="$(python3 - <<'PY'
           import sys
           print(f"cp{sys.version_info.major}{sys.version_info.minor}")
           PY
           )"
-          wheel_file="$(find .dist -path '*sherpa_onnx-*.dist-info/WHEEL' | head -n 1)"
-          grep -q "${python_tag}" "$wheel_file"
+          find .dist -name "sherpa_onnx-*-${python_tag}-*.whl" | grep -q .
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v6

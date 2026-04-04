@@ -52,6 +52,30 @@ class LocalAsrTests(unittest.TestCase):
         self.assertIn("interpreter=", str(ctx.exception))
         self.assertIn(" -m pip install sherpa-onnx", str(ctx.exception))
 
+    def test_ensure_runtime_dependency_bootstraps_from_bundled_wheelhouse(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            runtime_site = Path(temp_dir) / "runtime" / "cp314"
+            wheelhouse = Path(temp_dir) / "wheelhouse"
+            wheelhouse.mkdir()
+            imported = {"count": 0}
+            real_import_module = local_asr.importlib.import_module
+
+            def fake_import(name: str):
+                if name != "sherpa_onnx":
+                    return real_import_module(name)
+                imported["count"] += 1
+                if imported["count"] == 1:
+                    raise ImportError("missing")
+                return object()
+
+            with patch("ibus_voice.local_asr.importlib.import_module", side_effect=fake_import):
+                with patch("ibus_voice.local_asr.bundled_wheelhouse", return_value=wheelhouse):
+                    with patch("ibus_voice.local_asr.runtime_site_packages", return_value=runtime_site):
+                        with patch("ibus_voice.local_asr._install_runtime_from_wheelhouse") as install_runtime:
+                            local_asr.ensure_runtime_dependency()
+
+        install_runtime.assert_called_once_with(wheelhouse, runtime_site)
+
     def test_runtime_status_reports_auto_download_when_model_missing(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch("ibus_voice.local_asr.model_root", return_value=Path(temp_dir)):

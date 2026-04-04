@@ -8,6 +8,7 @@ import importlib
 import os
 import shutil
 import site
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -24,6 +25,8 @@ MODEL_URL = (
 MODEL_CHECK_FILE = "model.int8.onnx"
 TOKENS_FILE = "tokens.txt"
 DEFAULT_MODEL_ROOT = Path.home() / ".local" / "share" / "ibus-voice" / "models"
+DEFAULT_RUNTIME_ROOT = Path.home() / ".local" / "share" / "ibus-voice" / "runtime"
+WHEELHOUSE_DIR_NAME = "wheelhouse"
 
 
 class LocalAsrError(RuntimeError):
@@ -75,14 +78,93 @@ def is_model_installed(model_name: str) -> bool:
 def ensure_runtime_dependency() -> None:
     try:
         importlib.import_module("sherpa_onnx")
-    except ImportError as exc:
-        user_site = site.getusersitepackages()
-        install_command = f"{sys.executable} -m pip install sherpa-onnx"
-        raise LocalAsrError(
-            "local ASR runtime is unavailable because this interpreter could not import "
-            f"'sherpa_onnx': interpreter={sys.executable} user_site={user_site}. "
-            f"Install it into this Python with: {install_command}"
-        ) from exc
+        return
+    except ImportError:
+        pass
+
+    runtime_site = runtime_site_packages()
+    if runtime_site.is_dir():
+        _activate_runtime_site_packages(runtime_site)
+        try:
+            importlib.import_module("sherpa_onnx")
+            return
+        except ImportError:
+            pass
+
+    wheelhouse = bundled_wheelhouse()
+    if wheelhouse is not None:
+        try:
+            _install_runtime_from_wheelhouse(wheelhouse, runtime_site)
+            _activate_runtime_site_packages(runtime_site)
+            importlib.import_module("sherpa_onnx")
+            return
+        except Exception as exc:
+            raise LocalAsrError(f"failed to install local ASR runtime from bundled wheelhouse: {exc}") from exc
+
+    user_site = site.getusersitepackages()
+    install_command = f"{sys.executable} -m pip install sherpa-onnx"
+    raise LocalAsrError(
+        "local ASR runtime is unavailable because this interpreter could not import "
+        f"'sherpa_onnx': interpreter={sys.executable} user_site={user_site}. "
+        f"Install it into this Python with: {install_command}"
+    )
+
+
+def runtime_root() -> Path:
+    override = os.environ.get("IBUS_VOICE_RUNTIME_DIR")
+    if override:
+        return Path(override).expanduser().resolve()
+    return DEFAULT_RUNTIME_ROOT
+
+
+def runtime_site_packages() -> Path:
+    python_tag = f"cp{sys.version_info.major}{sys.version_info.minor}"
+    return runtime_root() / python_tag
+
+
+def _activate_runtime_site_packages(path: Path) -> None:
+    path_str = str(path)
+    if path_str not in sys.path:
+        sys.path.insert(0, path_str)
+
+
+def bundled_wheelhouse() -> Path | None:
+    module_path = Path(__file__).resolve()
+    for parent in module_path.parents:
+        candidate = parent / WHEELHOUSE_DIR_NAME
+        if candidate.is_dir():
+            return candidate
+    return None
+
+
+def _install_runtime_from_wheelhouse(wheelhouse: Path, destination: Path) -> None:
+    destination.mkdir(parents=True, exist_ok=True)
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "--disable-pip-version-check",
+                "--no-index",
+                f"--find-links={wheelhouse}",
+                "--target",
+                str(destination),
+                "sherpa-onnx",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as exc:
+        raise LocalAsrError(f"missing pip for interpreter {sys.executable}") from exc
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.strip() or exc.stdout.strip() or str(exc)
+        raise LocalAsrError(stderr) from exc
+
+    if result.returncode != 0:
+        raise LocalAsrError("pip installation did not complete successfully")
 
 
 def runtime_status(model_name: str) -> str:

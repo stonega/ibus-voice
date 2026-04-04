@@ -23,6 +23,7 @@ LOCAL_ASR_STAGE_DIR="${RPM_ROOT}/local-asr-stage"
 
 HOST_ARCH="$(uname -m)"
 RPM_ARCH="${TARGET_RPM_ARCH:-}"
+WHEEL_PLATFORM="${WHEEL_PLATFORM:-}"
 
 if [[ -z "${RPM_ARCH}" ]]; then
   case "${HOST_ARCH}" in
@@ -34,6 +35,21 @@ if [[ -z "${RPM_ARCH}" ]]; then
       ;;
     *)
       echo "error: unsupported architecture '${HOST_ARCH}' for RPM packaging" >&2
+      exit 1
+      ;;
+  esac
+fi
+
+if [[ -z "${WHEEL_PLATFORM}" ]]; then
+  case "${RPM_ARCH}" in
+    x86_64)
+      WHEEL_PLATFORM="manylinux2014_x86_64"
+      ;;
+    aarch64)
+      WHEEL_PLATFORM="manylinux2014_aarch64"
+      ;;
+    *)
+      echo "error: unsupported RPM architecture '${RPM_ARCH}' for sherpa-onnx wheel staging" >&2
       exit 1
       ;;
   esac
@@ -72,7 +88,7 @@ cp "${ROOT_DIR}/examples/config.toml" "${SOURCE_DIR}/examples/config.toml"
 cp "${ROOT_DIR}/examples/dictionary.txt" "${SOURCE_DIR}/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${SOURCE_DIR}/examples/system_prompt.txt"
 cp "${ROOT_DIR}/examples/user_prompt.txt" "${SOURCE_DIR}/examples/user_prompt.txt"
-PYTHON_BIN="${PYTHON_BIN}" "${ROOT_DIR}/scripts/stage-local-asr.sh" "${LOCAL_ASR_STAGE_DIR}" "${SOURCE_DIR}"
+PYTHON_BIN="${PYTHON_BIN}" WHEEL_PLATFORM="${WHEEL_PLATFORM}" "${ROOT_DIR}/scripts/stage-local-asr.sh" "${LOCAL_ASR_STAGE_DIR}" "${SOURCE_DIR}"
 
 cat > "${SOURCE_DIR}/ibus-voice" <<'EOF'
 #!/usr/bin/env bash
