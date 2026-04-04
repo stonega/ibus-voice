@@ -16,7 +16,8 @@
 
 - `ibus-voice` is active only when the engine is selected in IBus
 - recording starts only while the configured push-to-talk chord is held
-- IBus auxiliary text shows an animated fixed-width `🎙...` listening indicator while push-to-talk is held
+- IBus auxiliary text shows an animated fixed-width `🎙 Listening...` indicator while push-to-talk is held
+- when the local ListenHub runtime still needs first-use setup such as auto-downloading the bundled model, the auxiliary text switches to `🎙 Initing...` during that blocking initialization step
 - recording stops as soon as the trigger key or one of its required modifiers is released
 - audio is sent to the selected provider
 - OpenAI and Gemini send a built-in ASR prompt that preserves spoken language and mixed-language dictation without translation

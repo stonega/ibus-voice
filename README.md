@@ -62,9 +62,9 @@ If you are building this project, useful implementation areas will likely includ
 - Speech recognition backend adapters
 - Packaging and installation for desktop environments
 
-## v0.4.0 Status
+## v0.5.0 Status
 
-`v0.4.0` is the current packaged alpha milestone. It includes:
+`v0.5.0` is the current packaged alpha milestone. It includes:
 
 - config loading
 - a push-to-talk engine state machine
@@ -74,6 +74,7 @@ If you are building this project, useful implementation areas will likely includ
 - dictionary-aware OpenAI and Gemini transcription prompting
 - optional OpenAI-compatible correction after transcription with transcript history context
 - an IBus engine registration and hotkey handling layer
+- clearer IBus auxiliary status text during listening and first-use local runtime initialization
 - SQLite history for completed sessions at `~/.config/ibus-voice/history.db`
 - local and system install scripts
 - Debian and RPM packaging scripts
@@ -85,16 +86,17 @@ Recent design work in this repository has also started closing feature gaps iden
 
 ## Release Notes
 
-For the `v0.4.0` milestone:
+For the `v0.5.0` milestone:
 
 - supported runtime shape is Python 3.11+ on Linux with IBus
 - the interaction model is hold-to-talk dictation: recording runs only while the configured hotkey chord is held
 - speech recognition backends are pluggable and currently include OpenAI, Gemini, and ListenHub adapters
 - new installs default to the local ListenHub provider with the `sensevoice` model
+- the IBus panel now shows `🎙 Listening...` while recording and `🎙 Initing...` when the local runtime is blocking on first-use setup
 - transcript correction is optional and falls back to raw text if correction fails
 - package artifacts can be built locally as `.deb` and `.rpm`
 
-Known limitations for `v0.4.0`:
+Known limitations for `v0.5.0`:
 
 - desktop integration has unit coverage but limited live distro validation
 - local speech support currently supports only the built-in `sensevoice` model path

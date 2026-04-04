@@ -184,6 +184,12 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(result.metadata["engine"], "local-sensevoice")
         self.assertEqual(result.metadata["model"], "sensevoice")
 
+    def test_listenhub_readiness_status_reports_runtime_state(self) -> None:
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="sensevoice"))
+
+        with patch("ibus_voice.providers.listenhub.ensure_local_provider_ready", return_value="auto-download"):
+            self.assertEqual(provider.readiness_status(), "auto-download")
+
     def test_listenhub_wraps_local_runtime_failure(self) -> None:
         provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="sensevoice"))
 

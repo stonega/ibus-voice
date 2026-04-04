@@ -1,8 +1,15 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import Mock
 
-from ibus_voice.ibus_service import HotkeyMatcher, _hide_auxiliary_status, _listening_status_text
+from ibus_voice.ibus_service import (
+    HotkeyMatcher,
+    _hide_auxiliary_status,
+    _initializing_status_text,
+    _listening_status_text,
+    _provider_status_text,
+)
 
 
 class FakeEngine:
@@ -64,7 +71,22 @@ class AuxiliaryStatusTests(unittest.TestCase):
         self.assertTrue(engine.hidden)
 
     def test_listening_status_text_cycles_animated_dots(self) -> None:
-        self.assertEqual(_listening_status_text(0), "🎙...")
-        self.assertEqual(_listening_status_text(1), "🎙.. ")
-        self.assertEqual(_listening_status_text(2), "🎙.  ")
-        self.assertEqual(_listening_status_text(3), "🎙...")
+        self.assertEqual(_listening_status_text(0), "🎙 Listening...")
+        self.assertEqual(_listening_status_text(1), "🎙 Listening.. ")
+        self.assertEqual(_listening_status_text(2), "🎙 Listening.  ")
+        self.assertEqual(_listening_status_text(3), "🎙 Listening...")
+
+    def test_initializing_status_text_uses_initing_label(self) -> None:
+        self.assertEqual(_initializing_status_text(), "🎙 Initing...")
+
+    def test_provider_status_text_maps_auto_download_to_initing(self) -> None:
+        provider = Mock()
+        provider.readiness_status.return_value = "auto-download"
+
+        self.assertEqual(_provider_status_text(provider), "🎙 Initing...")
+
+    def test_provider_status_text_ignores_other_statuses(self) -> None:
+        provider = Mock()
+        provider.readiness_status.return_value = "installed"
+
+        self.assertIsNone(_provider_status_text(provider))

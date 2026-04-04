@@ -42,6 +42,9 @@ class ListenHubProvider:
             ),
         )
 
+    def readiness_status(self) -> str | None:
+        return ensure_local_provider_ready(self.config.model)
+
     def transcribe(self, audio: AudioPayload) -> TranscriptResult:
         if not audio.data:
             raise ProviderFailure(self.name, "audio payload is empty")

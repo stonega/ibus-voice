@@ -20,6 +20,8 @@ from ibus_voice.metadata import (
 LOGGER = logging.getLogger(__name__)
 
 LISTENING_ICON = "🎙"
+LISTENING_LABEL = "Listening"
+INITIALIZING_LABEL = "Initing"
 # Keep the auxiliary text at a stable width from the first frame so IBus
 # panels do not clip later frames after measuring the initial shortest label.
 LISTENING_DOT_FRAMES = ("...", ".. ", ".  ")
@@ -67,7 +69,24 @@ def _hide_auxiliary_status(engine: object) -> None:
 
 def _listening_status_text(frame: int) -> str:
     dots = LISTENING_DOT_FRAMES[frame % len(LISTENING_DOT_FRAMES)]
-    return f"{LISTENING_ICON}{dots}"
+    return f"{LISTENING_ICON} {LISTENING_LABEL}{dots}"
+
+
+def _initializing_status_text() -> str:
+    return f"{LISTENING_ICON} {INITIALIZING_LABEL}..."
+
+
+def _provider_status_text(provider: object) -> str | None:
+    readiness_status = getattr(provider, "readiness_status", None)
+    if not callable(readiness_status):
+        return None
+    try:
+        status = readiness_status()
+    except Exception:
+        return None
+    if status == "auto-download":
+        return _initializing_status_text()
+    return None
 
 
 def _remove_glib_source(source_id: int) -> None:
@@ -156,6 +175,9 @@ if IBus is not None:  # pragma: no branch
                 return True
             if self._voice_engine.state == "recording" and self._matcher.matches_release(keyval, state):
                 self._stop_listening_animation()
+                provider_status_text = _provider_status_text(self._voice_engine.provider)
+                if provider_status_text is not None:
+                    _set_auxiliary_status(self, provider_status_text, visible=True)
                 self._voice_engine.handle_release()
                 if self._voice_engine.last_error:
                     _set_auxiliary_status(self, f"Voice input failed: {self._voice_engine.last_error}", visible=True)

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.5.0 - 2026-04-04
+
+- updated the IBus auxiliary status text to use a stable `Listening...` label instead of icon-only dots
+- surfaced a dedicated `Initing...` auxiliary status while the bundled local ListenHub runtime blocks on first-use setup such as model auto-download
+
 ## 0.4.0 - 2026-03-29
 
 - replaced the Node-based `coli` local provider integration with an in-repo Python SenseVoice runtime
