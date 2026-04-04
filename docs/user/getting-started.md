@@ -1,6 +1,6 @@
 # Getting Started
 
-`ibus-voice` `v0.5.0` is the current early alpha release.
+`ibus-voice` `v0.6.0` is the current early alpha release.
 
 System install for GNOME and normal desktop use:
 
