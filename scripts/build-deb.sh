@@ -2,9 +2,10 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 VERSION="$(
   cd "${ROOT_DIR}"
-  python3 - <<'PY'
+  "${PYTHON_BIN}" - <<'PY'
 import tomllib
 from pathlib import Path
 
@@ -42,9 +43,9 @@ if ! command -v dpkg-deb >/dev/null 2>&1; then
   echo "Install dpkg tooling and rerun ./scripts/build-deb.sh" >&2
   exit 1
 fi
-if ! /usr/bin/python3 -m pip --version >/dev/null 2>&1; then
-  echo "error: python3 -m pip is required to bundle the local ASR runtime" >&2
-  echo "Install pip for python3 and rerun ./scripts/build-deb.sh" >&2
+if ! "${PYTHON_BIN}" -m pip --version >/dev/null 2>&1; then
+  echo "error: ${PYTHON_BIN} -m pip is required to bundle the local ASR runtime" >&2
+  echo "Install pip for ${PYTHON_BIN} and rerun ./scripts/build-deb.sh" >&2
   exit 1
 fi
 
@@ -67,7 +68,7 @@ cp "${ROOT_DIR}/examples/config.toml" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/
 cp "${ROOT_DIR}/examples/dictionary.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/system_prompt.txt"
 cp "${ROOT_DIR}/examples/user_prompt.txt" "${PACKAGE_ROOT}/usr/share/doc/ibus-voice/examples/user_prompt.txt"
-"${ROOT_DIR}/scripts/stage-local-asr.sh" "${LOCAL_ASR_STAGE_DIR}" "${PACKAGE_ROOT}/usr/lib/ibus-voice"
+PYTHON_BIN="${PYTHON_BIN}" "${ROOT_DIR}/scripts/stage-local-asr.sh" "${LOCAL_ASR_STAGE_DIR}" "${PACKAGE_ROOT}/usr/lib/ibus-voice"
 
 cat > "${PACKAGE_ROOT}/usr/bin/ibus-voice" <<'EOF'
 #!/usr/bin/env bash
@@ -77,7 +78,7 @@ exec /usr/bin/python3 -m ibus_voice.cli "$@"
 EOF
 chmod 0755 "${PACKAGE_ROOT}/usr/bin/ibus-voice"
 
-PYTHONPATH="${ROOT_DIR}/src" /usr/bin/python3 - <<'PY' > "${PACKAGE_ROOT}/usr/share/ibus/component/ibus-voice.xml"
+PYTHONPATH="${ROOT_DIR}/src" "${PYTHON_BIN}" - <<'PY' > "${PACKAGE_ROOT}/usr/share/ibus/component/ibus-voice.xml"
 from ibus_voice.metadata import render_component_xml
 
 print(render_component_xml("/usr/bin/ibus-voice"), end="")

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- made package builds use a configurable build-time Python interpreter so GitHub Actions can vendor `sherpa-onnx` against the intended ABI instead of always using `/usr/bin/python3`
+- added a CI check that fails package builds when the staged `sherpa-onnx` wheel tag does not match the configured GitHub Actions Python version
+
 ## 0.5.0 - 2026-04-04
 
 - updated the IBus auxiliary status text to use a stable `Listening...` label instead of icon-only dots

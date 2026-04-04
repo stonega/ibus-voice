@@ -43,6 +43,15 @@ class FakeOfflineRecognizer:
 
 
 class LocalAsrTests(unittest.TestCase):
+    def test_ensure_runtime_dependency_reports_interpreter_hint(self) -> None:
+        with patch("ibus_voice.local_asr.importlib.import_module", side_effect=ImportError("missing")):
+            with self.assertRaises(local_asr.LocalAsrError) as ctx:
+                local_asr.ensure_runtime_dependency()
+
+        self.assertIn("sherpa_onnx", str(ctx.exception))
+        self.assertIn("interpreter=", str(ctx.exception))
+        self.assertIn(" -m pip install sherpa-onnx", str(ctx.exception))
+
     def test_runtime_status_reports_auto_download_when_model_missing(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch("ibus_voice.local_asr.model_root", return_value=Path(temp_dir)):

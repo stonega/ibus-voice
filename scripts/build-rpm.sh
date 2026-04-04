@@ -2,9 +2,10 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 VERSION="$(
   cd "${ROOT_DIR}"
-  python3 - <<'PY'
+  "${PYTHON_BIN}" - <<'PY'
 import tomllib
 from pathlib import Path
 
@@ -43,9 +44,9 @@ if ! command -v rpmbuild >/dev/null 2>&1; then
   echo "Install rpm-build tooling and rerun ./scripts/build-rpm.sh" >&2
   exit 1
 fi
-if ! /usr/bin/python3 -m pip --version >/dev/null 2>&1; then
-  echo "error: python3 -m pip is required to bundle the local ASR runtime" >&2
-  echo "Install pip for python3 and rerun ./scripts/build-rpm.sh" >&2
+if ! "${PYTHON_BIN}" -m pip --version >/dev/null 2>&1; then
+  echo "error: ${PYTHON_BIN} -m pip is required to bundle the local ASR runtime" >&2
+  echo "Install pip for ${PYTHON_BIN} and rerun ./scripts/build-rpm.sh" >&2
   exit 1
 fi
 
@@ -71,7 +72,7 @@ cp "${ROOT_DIR}/examples/config.toml" "${SOURCE_DIR}/examples/config.toml"
 cp "${ROOT_DIR}/examples/dictionary.txt" "${SOURCE_DIR}/examples/dictionary.txt"
 cp "${ROOT_DIR}/examples/system_prompt.txt" "${SOURCE_DIR}/examples/system_prompt.txt"
 cp "${ROOT_DIR}/examples/user_prompt.txt" "${SOURCE_DIR}/examples/user_prompt.txt"
-"${ROOT_DIR}/scripts/stage-local-asr.sh" "${LOCAL_ASR_STAGE_DIR}" "${SOURCE_DIR}"
+PYTHON_BIN="${PYTHON_BIN}" "${ROOT_DIR}/scripts/stage-local-asr.sh" "${LOCAL_ASR_STAGE_DIR}" "${SOURCE_DIR}"
 
 cat > "${SOURCE_DIR}/ibus-voice" <<'EOF'
 #!/usr/bin/env bash
@@ -81,7 +82,7 @@ exec /usr/bin/python3 -m ibus_voice.cli "$@"
 EOF
 chmod 0755 "${SOURCE_DIR}/ibus-voice"
 
-PYTHONPATH="${ROOT_DIR}/src" /usr/bin/python3 - <<'PY' > "${SOURCE_DIR}/ibus-voice.xml"
+PYTHONPATH="${ROOT_DIR}/src" "${PYTHON_BIN}" - <<'PY' > "${SOURCE_DIR}/ibus-voice.xml"
 from ibus_voice.metadata import render_component_xml
 
 print(render_component_xml("/usr/bin/ibus-voice"), end="")

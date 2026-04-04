@@ -42,6 +42,12 @@ PYTHONPATH=src python3 -m ibus_voice.cli --history
 python3 -m pip install -e '.[runtime,local]'
 ```
 
+If `--check` says `install the Python package 'sherpa-onnx'` even though you already installed it, install it into the same interpreter that runs `ibus-voice`. The packaged launchers use `/usr/bin/python3`:
+
+```bash
+/usr/bin/python3 -m pip install sherpa-onnx
+```
+
 Package builds:
 
 ```bash

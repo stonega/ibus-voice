@@ -7,6 +7,8 @@ import array
 import importlib
 import os
 import shutil
+import site
+import sys
 import tarfile
 import tempfile
 import urllib.request
@@ -74,8 +76,12 @@ def ensure_runtime_dependency() -> None:
     try:
         importlib.import_module("sherpa_onnx")
     except ImportError as exc:
+        user_site = site.getusersitepackages()
+        install_command = f"{sys.executable} -m pip install sherpa-onnx"
         raise LocalAsrError(
-            "local ASR runtime is unavailable; install the Python package 'sherpa-onnx'"
+            "local ASR runtime is unavailable because this interpreter could not import "
+            f"'sherpa_onnx': interpreter={sys.executable} user_site={user_site}. "
+            f"Install it into this Python with: {install_command}"
         ) from exc
 
 

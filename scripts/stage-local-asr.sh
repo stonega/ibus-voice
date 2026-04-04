@@ -9,16 +9,17 @@ fi
 STAGING_DIR="$1"
 APP_ROOT="$2"
 LOCAL_ASR_PACKAGE="${LOCAL_ASR_PACKAGE:-sherpa-onnx>=1.12.0}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
-if ! /usr/bin/python3 -m pip --version >/dev/null 2>&1; then
-  echo "error: python3 -m pip is required to bundle the local ASR runtime" >&2
+if ! "${PYTHON_BIN}" -m pip --version >/dev/null 2>&1; then
+  echo "error: ${PYTHON_BIN} -m pip is required to bundle the local ASR runtime" >&2
   exit 1
 fi
 
 rm -rf "${STAGING_DIR}" "${APP_ROOT}/vendor"
 mkdir -p "${STAGING_DIR}" "${APP_ROOT}/vendor"
 
-/usr/bin/python3 -m pip install \
+"${PYTHON_BIN}" -m pip install \
   --disable-pip-version-check \
   --no-compile \
   --target "${STAGING_DIR}" \
