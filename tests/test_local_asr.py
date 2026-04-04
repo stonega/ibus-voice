@@ -135,3 +135,30 @@ class LocalAsrTests(unittest.TestCase):
                 local_asr.transcribe_wav_file_with_timeout("speech.wav", "sensevoice", 0.01)
 
         self.assertIn("timed out", str(ctx.exception))
+
+    def test_pcm16le_to_mono_float32_uses_configured_channel_stride(self) -> None:
+        samples = b"\x00\x40\x00\x20\x00\x20\x00\x10"
+
+        mono = local_asr.pcm16le_to_mono_float32(samples, channels=2)
+
+        self.assertEqual(mono, [0.5, 0.25])
+
+    def test_transcribe_pcm16le_bytes_passes_audio_format(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            model_dir = Path(temp_dir) / local_asr.MODEL_DIRECTORY_NAME
+            model_dir.mkdir()
+            (model_dir / local_asr.MODEL_CHECK_FILE).write_bytes(b"model")
+            (model_dir / local_asr.TOKENS_FILE).write_text("tokens", encoding="utf-8")
+            fake_module = types.SimpleNamespace(OfflineRecognizer=FakeOfflineRecognizer)
+
+            with patch("ibus_voice.local_asr.ensure_model_installed", return_value=model_dir):
+                with patch("ibus_voice.local_asr.importlib.import_module", return_value=fake_module):
+                    text = local_asr.transcribe_pcm16le_bytes(
+                        b"\x00\x40\x00\x20\x00\x20\x00\x10",
+                        16000,
+                        "sensevoice",
+                        channels=2,
+                    )
+
+        self.assertEqual(text, "transcript")
+        self.assertEqual(FakeOfflineRecognizer.last_kwargs["model"], str(model_dir / local_asr.MODEL_CHECK_FILE))

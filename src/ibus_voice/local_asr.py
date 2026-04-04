@@ -233,7 +233,26 @@ def _read_wave_mono_float32(path: Path) -> tuple[int, list[float]]:
     return sample_rate, mono_samples
 
 
-def transcribe_wav_file(path: str | os.PathLike[str], model_name: str) -> str:
+def pcm16le_to_mono_float32(audio_bytes: bytes, *, channels: int = 1, sample_width: int = 2) -> list[float]:
+    if channels < 1:
+        raise LocalAsrError("PCM input did not contain any channels")
+    if sample_width != 2:
+        raise LocalAsrError(f"unsupported PCM sample width: {sample_width * 8}-bit")
+    if len(audio_bytes) % 2 != 0:
+        raise LocalAsrError("PCM input did not contain aligned 16-bit samples")
+    samples = array.array("h")
+    samples.frombytes(audio_bytes)
+    return [samples[index] / 32768.0 for index in range(0, len(samples), channels)]
+
+
+def transcribe_pcm16le_bytes(
+    audio_bytes: bytes,
+    sample_rate: int,
+    model_name: str,
+    *,
+    channels: int = 1,
+    sample_width: int = 2,
+) -> str:
     ensure_runtime_dependency()
     model_dir = ensure_model_installed(model_name)
     sherpa_onnx = importlib.import_module("sherpa_onnx")
@@ -245,7 +264,34 @@ def transcribe_wav_file(path: str | os.PathLike[str], model_name: str) -> str:
         num_threads=2,
         debug=False,
     )
+    stream = recognizer.create_stream()
+    stream.accept_waveform(
+        sample_rate,
+        pcm16le_to_mono_float32(audio_bytes, channels=channels, sample_width=sample_width),
+    )
+    recognizer.decode_stream(stream)
+
+    result = stream.result
+    if hasattr(result, "text"):
+        return str(result.text).strip()
+    if isinstance(result, dict):
+        return str(result.get("text", "")).strip()
+    return str(result).strip()
+
+
+def transcribe_wav_file(path: str | os.PathLike[str], model_name: str) -> str:
     sample_rate, samples = _read_wave_mono_float32(Path(path))
+    ensure_runtime_dependency()
+    model_dir = ensure_model_installed(model_name)
+    sherpa_onnx = importlib.import_module("sherpa_onnx")
+
+    recognizer = sherpa_onnx.OfflineRecognizer.from_sense_voice(
+        model=str(model_dir / SENSEVOICE_MODEL.check_file),
+        tokens=str(model_dir / SENSEVOICE_MODEL.tokens_file),
+        use_itn=True,
+        num_threads=2,
+        debug=False,
+    )
     stream = recognizer.create_stream()
     stream.accept_waveform(sample_rate, samples)
     recognizer.decode_stream(stream)

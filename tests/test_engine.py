@@ -10,15 +10,26 @@ from ibus_voice.types import CorrectionFailure, ProviderFailure, TranscriptResul
 class StubCommitter:
     def __init__(self) -> None:
         self.values: list[str] = []
+        self.preedit_values: list[str] = []
+        self.hide_preedit_calls = 0
 
     def commit_text(self, text: str) -> None:
         self.values.append(text)
+
+    def update_preedit(self, text: str) -> None:
+        self.preedit_values.append(text)
+
+    def hide_preedit(self) -> None:
+        self.hide_preedit_calls += 1
 
 
 class StubProvider:
     def __init__(self, result: TranscriptResult | None = None, failure: Exception | None = None) -> None:
         self.result = result
         self.failure = failure
+        self.partial_results: list[str] = []
+        self.stream_finished = False
+        self.stream_cancelled = False
 
     def transcribe(self, audio: AudioPayload) -> TranscriptResult:
         if self.failure is not None:
@@ -27,6 +38,24 @@ class StubProvider:
         if not audio.data:
             raise ProviderFailure("stub", "missing audio")
         return self.result
+
+    def start_stream(self, audio_config, on_partial_result) -> dict[str, object]:
+        return {"audio_config": audio_config, "on_partial_result": on_partial_result}
+
+    def push_audio_chunk(self, session: dict[str, object], chunk: bytes) -> None:
+        del chunk
+        for text in self.partial_results:
+            session["on_partial_result"](text)
+        self.partial_results.clear()
+
+    def finish_stream(self, session: dict[str, object], audio: AudioPayload) -> TranscriptResult:
+        del session
+        self.stream_finished = True
+        return self.transcribe(audio)
+
+    def cancel_stream(self, session: dict[str, object]) -> None:
+        del session
+        self.stream_cancelled = True
 
 
 class StubCorrector:
@@ -194,3 +223,27 @@ class VoiceEngineTests(unittest.TestCase):
         self.assertEqual(engine.committer.values, ["hello world"])  # type: ignore[attr-defined]
         self.assertEqual(engine.last_warning, "history: database is locked")
         self.assertIn("history_save_failed", engine.events)
+
+    def test_partial_results_are_shown_as_preedit_until_commit(self) -> None:
+        recorder = MemoryRecorder()
+        provider = StubProvider(TranscriptResult(text="hello world", provider="stub"))
+        provider.partial_results = ["hel", "hello world"]
+        committer = StubCommitter()
+        engine = VoiceEngine(
+            recorder=recorder,
+            provider=provider,
+            committer=committer,
+            corrector=StubCorrector(),
+        )
+
+        engine.handle_press()
+        recorder.push(b"voice")
+        self.assertEqual(committer.preedit_values, ["hel", "hello world"])
+        self.assertEqual(engine.last_partial_text, "hello world")
+
+        engine.handle_release()
+
+        self.assertTrue(provider.stream_finished)
+        self.assertEqual(committer.values, ["hello world"])
+        self.assertGreaterEqual(committer.hide_preedit_calls, 2)
+        self.assertIsNone(engine.last_partial_text)

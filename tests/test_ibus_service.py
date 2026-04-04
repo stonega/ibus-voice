@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import Mock
 
 from ibus_voice.ibus_service import (
+    TextCommitter,
     HotkeyMatcher,
     _hide_auxiliary_status,
     _initializing_status_text,
@@ -16,12 +17,20 @@ class FakeEngine:
     def __init__(self) -> None:
         self.hidden = False
         self.updated: list[tuple[str, bool]] = []
+        self.preedit_hidden = False
+        self.preedit_updates: list[tuple[str, int, bool]] = []
 
     def hide_auxiliary_text(self) -> None:
         self.hidden = True
 
     def update_auxiliary_text(self, text, visible: bool) -> None:
         self.updated.append((str(text), visible))
+
+    def update_preedit_text(self, text, cursor_pos: int, visible: bool) -> None:
+        self.preedit_updates.append((str(text), cursor_pos, visible))
+
+    def hide_preedit_text(self) -> None:
+        self.preedit_hidden = True
 
 
 class HotkeyMatcherTests(unittest.TestCase):
@@ -90,3 +99,29 @@ class AuxiliaryStatusTests(unittest.TestCase):
         provider.readiness_status.return_value = "installed"
 
         self.assertIsNone(_provider_status_text(provider))
+
+    def test_text_committer_queues_preedit_updates_on_glib_main_loop(self) -> None:
+        engine = FakeEngine()
+        committer = TextCommitter(engine=engine)
+        fake_glib = Mock()
+        queued: list[object] = []
+
+        def idle_add(callback):
+            queued.append(callback)
+            return 1
+
+        fake_glib.idle_add.side_effect = idle_add
+
+        from ibus_voice import ibus_service
+
+        with unittest.mock.patch.object(ibus_service, "GLib", fake_glib):
+            with unittest.mock.patch.object(
+                ibus_service,
+                "IBus",
+                Mock(Text=Mock(new_from_string=lambda text: text)),
+            ):
+                committer.update_preedit("hello")
+                self.assertEqual(engine.preedit_updates, [])
+                queued[0]()
+
+        self.assertEqual(engine.preedit_updates, [("hello", 5, True)])

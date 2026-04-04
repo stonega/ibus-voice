@@ -49,6 +49,37 @@ class TextCommitter:
             return
         self.engine.commit_text(IBus.Text.new_from_string(text))
 
+    def update_preedit(self, text: str) -> None:
+        if IBus is None or self.engine is None:
+            LOGGER.info("update_preedit fallback: %s", text)
+            return
+        _run_on_main_thread(self.engine.update_preedit_text, IBus.Text.new_from_string(text), len(text), True)
+
+    def hide_preedit(self) -> None:
+        if IBus is None or self.engine is None:
+            return
+        hide = getattr(self.engine, "hide_preedit_text", None)
+        if callable(hide):
+            _run_on_main_thread(hide)
+            return
+        _run_on_main_thread(self.engine.update_preedit_text, IBus.Text.new_from_string(""), 0, False)
+
+
+def _run_on_main_thread(callback, *args) -> None:
+    if GLib is None:
+        callback(*args)
+        return
+    idle_add = getattr(GLib, "idle_add", None)
+    if not callable(idle_add):
+        callback(*args)
+        return
+
+    def invoke():
+        callback(*args)
+        return False
+
+    idle_add(invoke)
+
 
 def _set_auxiliary_status(engine: object, text: str, *, visible: bool) -> None:
     if IBus is None:

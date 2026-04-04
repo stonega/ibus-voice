@@ -17,6 +17,7 @@
 - `ibus-voice` is active only when the engine is selected in IBus
 - recording starts only while the configured push-to-talk chord is held
 - IBus auxiliary text shows an animated fixed-width `🎙 Listening...` indicator while push-to-talk is held
+- when the selected provider supports streaming partials, recognized text is surfaced through IBus preedit while the user is still speaking
 - when the local ListenHub runtime still needs first-use setup such as auto-downloading the bundled model, the auxiliary text switches to `🎙 Initing...` during that blocking initialization step
 - recording stops as soon as the trigger key or one of its required modifiers is released
 - audio is sent to the selected provider
@@ -26,7 +27,7 @@
 - if configured, the raw transcript is sent to a correction model before commit
 - correction templates can use transcript text, recent session history, and dictionary content
 - correction failures fall back to the raw transcript
-- only final text is committed
+- partial text remains preedit-only until release; only the final corrected text is committed
 - successful committed sessions are appended to the configured history database path
 - correction token usage is persisted in session metadata when the correction response includes `usage`
 - OpenAI receives multipart file uploads

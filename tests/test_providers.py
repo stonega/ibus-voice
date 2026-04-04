@@ -7,7 +7,7 @@ from unittest.mock import patch
 from urllib.error import HTTPError
 
 from ibus_voice.audio import AudioPayload
-from ibus_voice.config import ProviderConfig
+from ibus_voice.config import AudioConfig, ProviderConfig
 from ibus_voice.local_asr import LocalAsrError
 from ibus_voice.providers.factory import build_provider
 from ibus_voice.providers.gemini import GeminiProvider
@@ -210,6 +210,30 @@ class ProviderTests(unittest.TestCase):
                 provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
 
         self.assertIn("empty transcript", str(ctx.exception))
+
+    def test_listenhub_finish_stream_reuses_pcm_buffer_for_final_decode(self) -> None:
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="sensevoice"))
+        audio_config = AudioConfig(sample_rate=16000, channels=2, sample_width=2)
+        partials: list[str] = []
+        session = provider.start_stream(audio_config, partials.append)
+        session.pcm_bytes.extend(b"\x00\x40\x00\x20\x00\x20\x00\x10")
+
+        with patch("ibus_voice.providers.listenhub.transcribe_wav_file_with_timeout") as wav_decode:
+            with patch("ibus_voice.providers.listenhub.transcribe_pcm16le_bytes", return_value=" final transcript ") as pcm_decode:
+                result = provider.finish_stream(
+                    session,
+                    AudioPayload(data=b"unused", mime_type="audio/wav", filename="speech.wav"),
+                )
+
+        wav_decode.assert_not_called()
+        pcm_decode.assert_called_once_with(
+            b"\x00\x40\x00\x20\x00\x20\x00\x10",
+            16000,
+            "sensevoice",
+            channels=2,
+            sample_width=2,
+        )
+        self.assertEqual(result.text, "final transcript")
 
     def test_provider_factory_builds_listenhub(self) -> None:
         provider = build_provider(ProviderConfig(name="listenhub", model="sensevoice"))
