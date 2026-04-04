@@ -133,6 +133,7 @@ mkdir -p %{buildroot}/usr/share/ibus/component
 mkdir -p %{buildroot}/usr/share/doc/%{name}/examples
 cp -r src %{buildroot}/usr/lib/ibus-voice/
 cp -r vendor %{buildroot}/usr/lib/ibus-voice/
+cp -r wheelhouse %{buildroot}/usr/lib/ibus-voice/
 cp README.md %{buildroot}/usr/lib/ibus-voice/
 cp LICENSE %{buildroot}/usr/lib/ibus-voice/
 cp refresh-ibus.sh %{buildroot}/usr/lib/ibus-voice/refresh-ibus.sh

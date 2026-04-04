@@ -74,6 +74,12 @@ jobs:
           pkg=".dist/packages/ibus-voice-${version}-1.${{ matrix.rpm_arch }}.rpm"
           test "$(rpm -qp --queryformat '%{ARCH}' "$pkg")" = "${{ matrix.rpm_arch }}"
 
+      - name: Verify RPM package includes sherpa-onnx wheelhouse
+        run: |
+          version="$(python3 -c 'import tomllib; from pathlib import Path; print(tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"])')"
+          pkg=".dist/packages/ibus-voice-${version}-1.${{ matrix.rpm_arch }}.rpm"
+          rpm -qpl "$pkg" | grep -q '^/usr/lib/ibus-voice/wheelhouse/'
+
       - name: Verify staged sherpa-onnx wheelhouse includes CI Python ABI
         run: |
           python_tag="$(python3 - <<'PY'
