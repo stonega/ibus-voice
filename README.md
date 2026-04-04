@@ -75,6 +75,7 @@ The installers and first run use `~/.config/ibus-voice/` as the default config d
 - `user_prompt.txt`: prompt template that inserts transcript, history, and dictionary content
 
 Tip: after changing `config.toml`, restart IBus before testing the new settings so the running `ibus-voice` engine reloads the updated config.
+Tip: `dictionary.txt` is currently not used by the `listenhub` provider. Dictionary biasing only applies to the remote providers and correction prompting.
 
 See `docs/user/configuration.md` for the full configuration reference.
 
