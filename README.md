@@ -114,6 +114,10 @@ Feature-gap analysis for this phase was informed by the Koe project and its publ
 
 - https://koe.li/docs
 
+Earlier local-provider work in this repository was also informed by the upstream `marswaveai/coli` project:
+
+- https://github.com/marswaveai/coli
+
 `ibus-voice` remains a Linux IBus project with its own architecture and scope.
 
 ## License
