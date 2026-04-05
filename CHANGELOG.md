@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.6.1 - 2026-04-05
+
+- added streaming preedit updates for the local ListenHub provider so partial recognition can appear in the active input field while the user is still speaking
+- routed IBus preedit updates back onto the GLib main loop to avoid background-thread UI access during local streaming
+- aligned local streaming PCM decoding with the recorder audio format and reused the in-memory PCM buffer for final local transcription instead of decoding the full WAV a second time
+
 ## 0.6.0 - 2026-04-04
 
 - made package builds use a configurable build-time Python interpreter so GitHub Actions can vendor `sherpa-onnx` against the intended ABI instead of always using `/usr/bin/python3`
