@@ -13,7 +13,8 @@ from ibus_voice.providers.factory import build_provider
 from ibus_voice.providers.gemini import GeminiProvider
 from ibus_voice.providers.listenhub import ListenHubProvider, ensure_local_provider_ready
 from ibus_voice.providers.openai import OpenAIProvider
-from ibus_voice.types import ProviderFailure
+from ibus_voice.providers.openai_transcriptions import OpenAITranscriptionsProvider
+from ibus_voice.types import ProviderFailure, TranscriptResult
 
 
 class FakeTransport:
@@ -53,6 +54,17 @@ class FakeTransport:
         if self.failure is not None:
             raise self.failure
         return self.response
+
+
+class StubFallbackProvider:
+    def __init__(self, result: TranscriptResult) -> None:
+        self.result = result
+        self.calls = 0
+
+    def transcribe(self, audio: AudioPayload) -> TranscriptResult:
+        del audio
+        self.calls += 1
+        return self.result
 
 
 class ProviderTests(unittest.TestCase):
@@ -114,6 +126,74 @@ class ProviderTests(unittest.TestCase):
             provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
 
         self.assertIn("non_transcript_response", str(ctx.exception))
+
+    def test_openai_transcriptions_uses_configured_endpoint(self) -> None:
+        provider = OpenAITranscriptionsProvider(
+            config=ProviderConfig(
+                name="openai_transcriptions",
+                model="whisper-1",
+                endpoint="http://127.0.0.1:8000/v1/audio/transcriptions",
+            ),
+            transport=FakeTransport({"text": " hello "}),
+            fallback_provider=ListenHubProvider.from_config(ProviderConfig(name="listenhub", model="sensevoice")),
+        )
+
+        result = provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
+
+        self.assertEqual(result.text, "hello")
+        self.assertEqual(result.provider, "openai_transcriptions")
+        self.assertEqual(
+            provider.transport.last_request["url"],
+            "http://127.0.0.1:8000/v1/audio/transcriptions",
+        )
+        self.assertFalse(result.metadata["fallback_used"])
+
+    def test_openai_transcriptions_falls_back_to_local_on_timeout(self) -> None:
+        fallback_provider = StubFallbackProvider(
+            TranscriptResult(
+                text="local transcript",
+                provider="listenhub",
+                metadata={"engine": "local-sensevoice"},
+            )
+        )
+        provider = OpenAITranscriptionsProvider(
+            config=ProviderConfig(
+                name="openai_transcriptions",
+                model="whisper-1",
+                endpoint="http://127.0.0.1:8000/v1/audio/transcriptions",
+            ),
+            transport=FakeTransport(failure=TimeoutError("timed out")),
+            fallback_provider=fallback_provider,
+        )
+
+        result = provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
+
+        self.assertEqual(fallback_provider.calls, 1)
+        self.assertEqual(result.text, "local transcript")
+        self.assertEqual(result.provider, "openai_transcriptions")
+        self.assertTrue(result.metadata["fallback_used"])
+        self.assertEqual(result.metadata["fallback_provider"], "listenhub")
+        self.assertEqual(result.metadata["engine"], "local-sensevoice")
+
+    def test_openai_transcriptions_does_not_fall_back_on_http_error(self) -> None:
+        fallback_provider = StubFallbackProvider(
+            TranscriptResult(text="local transcript", provider="listenhub")
+        )
+        provider = OpenAITranscriptionsProvider(
+            config=ProviderConfig(
+                name="openai_transcriptions",
+                model="whisper-1",
+                endpoint="http://127.0.0.1:8000/v1/audio/transcriptions",
+            ),
+            transport=FakeTransport(failure=RuntimeError("HTTP 500: boom")),
+            fallback_provider=fallback_provider,
+        )
+
+        with self.assertRaises(ProviderFailure) as ctx:
+            provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
+
+        self.assertEqual(fallback_provider.calls, 0)
+        self.assertIn("HTTP 500", str(ctx.exception))
 
     def test_gemini_extracts_candidate_text(self) -> None:
         provider = GeminiProvider(
@@ -239,6 +319,17 @@ class ProviderTests(unittest.TestCase):
         provider = build_provider(ProviderConfig(name="listenhub", model="sensevoice"))
 
         self.assertIsInstance(provider, ListenHubProvider)
+
+    def test_provider_factory_builds_openai_transcriptions(self) -> None:
+        provider = build_provider(
+            ProviderConfig(
+                name="openai_transcriptions",
+                model="whisper-1",
+                endpoint="http://127.0.0.1:8000/v1/audio/transcriptions",
+            )
+        )
+
+        self.assertIsInstance(provider, OpenAITranscriptionsProvider)
 
     def test_provider_factory_rejects_unknown_provider(self) -> None:
         with self.assertRaises(ProviderFailure):

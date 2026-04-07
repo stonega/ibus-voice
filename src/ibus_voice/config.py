@@ -19,6 +19,12 @@ dictionary_path = "dictionary.txt"
 # api_key = "replace-me"
 # model = "gpt-4o-transcribe"
 # timeout_seconds = 30
+#
+# Self-hosted OpenAI-compatible transcription example:
+# name = "openai_transcriptions"
+# endpoint = "http://host:port/v1/audio/transcriptions"
+# model = "whisper-1"
+# timeout_seconds = 10
 
 [history]
 path = "history.db"
@@ -45,8 +51,6 @@ modifiers = ["Control"]
 """
 DEFAULT_COMPANION_FILES: dict[str, str] = {
     "dictionary.txt": """IBus
-OpenAI
-Gemini
 ibus-voice
 """,
     "system_prompt.txt": """You are a voice-input correction step for ibus-voice.
@@ -188,9 +192,16 @@ def _parse_provider_config(raw: object, *, base_dir: Path) -> ProviderConfig:
     model = _optional_str(raw.get("model"))
     api_key = _optional_str(raw.get("api_key")) or ""
 
+    endpoint = _optional_str(raw.get("endpoint"))
+
     if normalized_name in {"openai", "gemini"}:
         if not api_key or not model:
             raise ValueError("provider.api_key and provider.model are required for remote providers")
+    elif normalized_name == "openai_transcriptions":
+        if not model:
+            raise ValueError("provider.model is required for openai_transcriptions")
+        if not endpoint:
+            raise ValueError("provider.endpoint is required for openai_transcriptions")
     elif normalized_name == "listenhub":
         model = model or "sensevoice"
         if model != "sensevoice":
@@ -202,7 +213,7 @@ def _parse_provider_config(raw: object, *, base_dir: Path) -> ProviderConfig:
         name=name,
         model=model or "",
         api_key=api_key,
-        endpoint=_optional_str(raw.get("endpoint")),
+        endpoint=endpoint,
         timeout_seconds=float(raw.get("timeout_seconds", 30.0)),
         dictionary_path=_resolve_optional_path(raw.get("dictionary_path", "dictionary.txt"), base_dir),
     )

@@ -45,6 +45,7 @@ To switch providers, change `provider.name` and update the provider-specific fie
 
 - `listenhub`: omit `api_key` and keep `model = "sensevoice"`
 - `openai`: set `api_key` and an OpenAI transcription model such as `gpt-4o-transcribe`
+- `openai_transcriptions`: set `endpoint` to a self-hosted OpenAI-compatible `/v1/audio/transcriptions` URL, set `model`, and optionally set `api_key`
 - `gemini`: set `api_key` and a Gemini model that supports inline audio input
 
 When `[provider]` is omitted entirely, `ibus-voice` defaults to `listenhub` with `model = "sensevoice"`.
@@ -52,11 +53,14 @@ When `[provider]` is omitted entirely, `ibus-voice` defaults to `listenhub` with
 Supported provider defaults:
 
 - OpenAI: transcription endpoint using multipart audio upload
+- `openai_transcriptions`: user-supplied OpenAI-compatible multipart transcription endpoint with local timeout fallback
 - Gemini: `generateContent` with inline audio data
 - ListenHub: built-in local SenseVoice execution with `sensevoice` as the default model
-- OpenAI and Gemini always send a built-in transcription prompt that asks the model to keep the spoken language as-is, avoid translation, and preserve mixed-language dictation
-- if `dictionary.txt` exists, OpenAI and Gemini append it to that transcription prompt to bias recognition toward canonical terms
+- OpenAI, `openai_transcriptions`, and Gemini always send a built-in transcription prompt that asks the model to keep the spoken language as-is, avoid translation, and preserve mixed-language dictation
+- if `dictionary.txt` exists, OpenAI, `openai_transcriptions`, and Gemini append it to that transcription prompt to bias recognition toward canonical terms
 - if a remote provider echoes the prompt or returns refusal text instead of a transcript, `ibus-voice` reports a provider failure such as `non_transcript_response` or `audio_not_processed` and does not commit the text
+- `openai_transcriptions` falls back to the local SenseVoice provider only when the remote request times out; other remote failures still fail the dictation request
+- `ibus-voice.cli --check` validates the local SenseVoice runtime for both `listenhub` and `openai_transcriptions`
 
 Local ListenHub notes:
 
@@ -113,6 +117,7 @@ Installer behavior:
 - the IBus component XML is installed at `~/.local/share/ibus-voice/component/ibus-voice.xml`
 - the installer copies the default config to `~/.config/ibus-voice/config.toml` if it does not already exist
 - example `dictionary.txt`, `system_prompt.txt`, and `user_prompt.txt` should be copied into `~/.config/ibus-voice/`
+- `ibus-voice --add-word "TERM"` appends a canonical term to the configured dictionary file and creates that file if it does not exist yet
 
 System installer behavior:
 

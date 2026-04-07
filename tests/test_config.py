@@ -43,6 +43,36 @@ class ParseConfigTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_config({"provider": {"name": "openai"}})
 
+    def test_parse_openai_transcriptions_provider(self) -> None:
+        config = parse_config(
+            {
+                "provider": {
+                    "name": "openai_transcriptions",
+                    "endpoint": "http://127.0.0.1:8000/v1/audio/transcriptions",
+                    "model": "whisper-1",
+                },
+            },
+            base_dir=Path("/tmp/ibus-voice-config"),
+        )
+
+        self.assertEqual(config.provider.name, "openai_transcriptions")
+        self.assertEqual(config.provider.model, "whisper-1")
+        self.assertEqual(config.provider.api_key, "")
+        self.assertEqual(config.provider.endpoint, "http://127.0.0.1:8000/v1/audio/transcriptions")
+
+    def test_parse_openai_transcriptions_requires_endpoint(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            parse_config(
+                {
+                    "provider": {
+                        "name": "openai_transcriptions",
+                        "model": "whisper-1",
+                    },
+                }
+            )
+
+        self.assertIn("provider.endpoint is required for openai_transcriptions", str(ctx.exception))
+
     def test_parse_listenhub_provider_without_api_key(self) -> None:
         config = parse_config(
             {

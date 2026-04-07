@@ -79,6 +79,17 @@ Tip: `dictionary.txt` is currently not used by the `listenhub` provider. Diction
 
 See `docs/user/configuration.md` for the full configuration reference.
 
+Example self-hosted OpenAI-compatible transcription config:
+
+```toml
+[provider]
+name = "openai_transcriptions"
+endpoint = "http://host:port/v1/audio/transcriptions"
+model = "whisper-1"
+timeout_seconds = 10
+dictionary_path = "dictionary.txt"
+```
+
 ## CLI Usage
 
 The installed launcher is `ibus-voice`.
