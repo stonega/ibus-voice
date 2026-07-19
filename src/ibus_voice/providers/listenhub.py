@@ -12,8 +12,10 @@ from ibus_voice.audio import AudioPayload
 from ibus_voice.config import AudioConfig
 from ibus_voice.config import ProviderConfig
 from ibus_voice.local_asr import (
+    initialize_local_asr,
     LocalAsrError,
     MODEL_NAME as DEFAULT_MODEL,
+    normalize_model_name,
     runtime_status,
     transcribe_pcm16le_bytes,
     transcribe_wav_file_with_timeout,
@@ -62,7 +64,7 @@ class ListenHubProvider:
 
     @classmethod
     def from_config(cls, config: ProviderConfig) -> "ListenHubProvider":
-        model = config.model or DEFAULT_MODEL
+        model = normalize_model_name(config.model or DEFAULT_MODEL)
         return cls(
             config=ProviderConfig(
                 name=config.name,
@@ -76,6 +78,12 @@ class ListenHubProvider:
 
     def readiness_status(self) -> str | None:
         return ensure_local_provider_ready(self.config.model)
+
+    def initialize(self) -> None:
+        try:
+            initialize_local_asr(self.config.model)
+        except LocalAsrError as exc:
+            raise ProviderFailure(self.name, str(exc), retryable=True) from exc
 
     def transcribe(self, audio: AudioPayload) -> TranscriptResult:
         if not audio.data:
@@ -104,7 +112,7 @@ class ListenHubProvider:
             text=text,
             provider=self.name,
             latency_ms=int((monotonic() - started) * 1000),
-            metadata={"model": self.config.model, "engine": "local-sensevoice"},
+            metadata={"model": self.config.model, "engine": "local-qwen3-asr"},
         )
 
     def start_stream(self, audio_config: AudioConfig, on_partial_result) -> _StreamingSession:
@@ -166,7 +174,7 @@ class ListenHubProvider:
             text=text,
             provider=self.name,
             latency_ms=int((monotonic() - session.started_at) * 1000),
-            metadata={"model": self.config.model, "engine": "local-sensevoice"},
+            metadata={"model": self.config.model, "engine": "local-qwen3-asr"},
         )
 
     def cancel_stream(self, session: _StreamingSession) -> None:

@@ -13,7 +13,7 @@ Example:
 ```toml
 [provider]
 name = "listenhub"
-model = "sensevoice"
+model = "qwen3-asr-0.6b"
 timeout_seconds = 30
 dictionary_path = "dictionary.txt"
 
@@ -43,34 +43,39 @@ modifiers = ["Control"]
 
 To switch providers, change `provider.name` and update the provider-specific fields:
 
-- `listenhub`: omit `api_key` and keep `model = "sensevoice"`
+- `listenhub`: omit `api_key` and keep `model = "qwen3-asr-0.6b"`
 - `openai`: set `api_key` and an OpenAI transcription model such as `gpt-4o-transcribe`
 - `openai_transcriptions`: set `endpoint` to a self-hosted OpenAI-compatible `/v1/audio/transcriptions` URL, set `model`, and optionally set `api_key`
 - `gemini`: set `api_key` and a Gemini model that supports inline audio input
 
-When `[provider]` is omitted entirely, `ibus-voice` defaults to `listenhub` with `model = "sensevoice"`.
+When `[provider]` is omitted entirely, `ibus-voice` defaults to `listenhub` with `model = "qwen3-asr-0.6b"`.
 
 Supported provider defaults:
 
 - OpenAI: transcription endpoint using multipart audio upload
 - `openai_transcriptions`: user-supplied OpenAI-compatible multipart transcription endpoint with local timeout fallback
 - Gemini: `generateContent` with inline audio data
-- ListenHub: built-in local SenseVoice execution with `sensevoice` as the default model
+- ListenHub: built-in local Qwen3-ASR 0.6B INT8 execution with `qwen3-asr-0.6b` as the default model
 - OpenAI, `openai_transcriptions`, and Gemini always send a built-in transcription prompt that asks the model to keep the spoken language as-is, avoid translation, and preserve mixed-language dictation
 - if `dictionary.txt` exists, OpenAI, `openai_transcriptions`, and Gemini append it to that transcription prompt to bias recognition toward canonical terms
 - if a remote provider echoes the prompt or returns refusal text instead of a transcript, `ibus-voice` reports a provider failure such as `non_transcript_response` or `audio_not_processed` and does not commit the text
-- `openai_transcriptions` falls back to the local SenseVoice provider only when the remote request times out; other remote failures still fail the dictation request
-- `ibus-voice.cli --check` validates the local SenseVoice runtime for both `listenhub` and `openai_transcriptions`
+- `openai_transcriptions` falls back to the local Qwen3-ASR provider only when the remote request times out; other remote failures still fail the dictation request
+- `ibus-voice.cli --check` validates the local Qwen3-ASR runtime for both `listenhub` and `openai_transcriptions`
 
 Local ListenHub notes:
 
-- `listenhub` follows the local ASR flow documented at `https://listenhub.ai/docs/zh/skills/asr`
-- local ASR uses the Python `sherpa-onnx` runtime instead of an external Node CLI
-- `sensevoice` is the only supported local model in the current in-repo implementation
-- the SenseVoice model is stored under `~/.local/share/ibus-voice/models/` by default
-- the model downloads automatically on first local-provider use if it is not installed yet
+- the `listenhub` provider name is retained for configuration compatibility; recognition runs locally through Python and `sherpa-onnx`
+- `qwen3-asr-0.6b` is the supported local model and requires `sherpa-onnx >= 1.12.36`
+- existing configs with `model = "sensevoice"` are automatically migrated in memory to `qwen3-asr-0.6b`
+- Qwen3-ASR supports Chinese, English, mixed-language speech, and additional languages and Chinese dialects; see the [Qwen model card](https://huggingface.co/Qwen/Qwen3-ASR-0.6B)
+- the INT8 model is stored under `~/.local/share/ibus-voice/models/` by default
+- the verified model archive is about 879 MB and downloads automatically on first local-provider use; recognition is offline after installation
+- first-use download and recognizer preparation run in the background; desktop notifications report setup start, success, and failure
+- while setup is running, the dictation hotkey is consumed without starting a recording; use it again after the ready notification
+- a failed setup can be retried with the dictation hotkey
+- the recognizer is preloaded once per process and reused for partial and final decoding
 - local ASR consumes the recorded WAV payload directly; no `ffmpeg` conversion step is used
-- `dictionary_path` is currently ignored by the local ListenHub provider because the published CLI docs do not describe a dictionary-bias flag
+- `dictionary_path` is currently ignored by the local ListenHub provider
 - `ibus-voice.cli --check` fails fast when `provider.name = "listenhub"` and the local Python ASR runtime is missing
 - if you installed `sherpa-onnx` already but the runtime check still fails, install it into the exact interpreter reported by the error; packaged launchers use `/usr/bin/python3`
 - packaged installs also carry a bundled `wheelhouse`; if the shipped vendor copy does not match the target machine's Python minor version, `ibus-voice` attempts a local offline reinstall into `~/.local/share/ibus-voice/runtime/`

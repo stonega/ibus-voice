@@ -8,7 +8,8 @@
 - `correction.py`: optional OpenAI-compatible transcript correction
 - `engine.py`: state machine for push-to-talk dictation
 - `history.py`: SQLite persistence for completed dictation sessions
-- `local_asr.py`: built-in SenseVoice model management and offline decoding
+- `local_asr.py`: built-in Qwen3-ASR model management and offline decoding
+- `provider_initialization.py`: background provider setup state and desktop notifications
 - `providers/`: normalized speech backend adapters
 - `ibus_service.py`: IBus engine registration, hotkey matching, and commit boundary
 
@@ -18,7 +19,9 @@
 - recording starts only while the configured push-to-talk chord is held
 - IBus auxiliary text shows an animated fixed-width `🎙 Listening...` indicator while push-to-talk is held
 - when the selected provider supports streaming partials, recognized text is surfaced through IBus preedit while the user is still speaking
-- when the local ListenHub runtime still needs first-use setup such as auto-downloading the bundled model, the auxiliary text switches to `🎙 Initing...` during that blocking initialization step
+- when local setup is needed, model download and recognizer preparation run on a daemon worker instead of blocking the IBus event handler
+- desktop notifications report when local setup starts, succeeds, or fails; the IBus auxiliary area is reserved for active listening and transcription failures
+- the dictation hotkey is consumed without recording while setup is running, and pressing it after a failed setup starts a retry
 - recording stops as soon as the trigger key or one of its required modifiers is released
 - audio is sent to the selected provider
 - OpenAI and Gemini send a built-in ASR prompt that preserves spoken language and mixed-language dictation without translation
@@ -32,7 +35,9 @@
 - correction token usage is persisted in session metadata when the correction response includes `usage`
 - OpenAI receives multipart file uploads
 - Gemini receives inline audio data through `generateContent`
-- ListenHub uses an in-repo Python SenseVoice runtime and auto-downloads the local model on first use when needed
+- ListenHub uses the sherpa-onnx Qwen3-ASR 0.6B INT8 runtime and auto-downloads a SHA-256-verified model archive on first use when needed
+- the local Qwen recognizer is preloaded by background setup, cached for the process lifetime, and serialized because streaming partials and final transcription share it
+- legacy `sensevoice` model configuration is normalized to `qwen3-asr-0.6b` before provider construction
 
 ## Current Gaps
 

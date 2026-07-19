@@ -97,7 +97,7 @@ path = "state/history.db"
 
     def test_check_command_reports_listenhub_binary_path(self) -> None:
         config = AppConfig(
-            provider=ProviderConfig(name="listenhub", model="sensevoice"),
+            provider=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b"),
             audio=AudioConfig(),
             hotkey=HotkeyConfig(),
             history=HistoryConfig(path=Path("/tmp/history.db")),
@@ -139,7 +139,7 @@ path = "state/history.db"
 
     def test_check_command_fails_cleanly_when_listenhub_binary_is_missing(self) -> None:
         config = AppConfig(
-            provider=ProviderConfig(name="listenhub", model="sensevoice"),
+            provider=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b"),
             audio=AudioConfig(),
             hotkey=HotkeyConfig(),
             history=HistoryConfig(path=Path("/tmp/history.db")),
@@ -188,7 +188,7 @@ path = "state/history.db"
             dictionary_path = Path(temp_dir) / "dictionary.txt"
             dictionary_path.write_text("IBus\n", encoding="utf-8")
             config = AppConfig(
-                provider=ProviderConfig(name="listenhub", model="sensevoice", dictionary_path=dictionary_path),
+                provider=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b", dictionary_path=dictionary_path),
                 audio=AudioConfig(),
                 hotkey=HotkeyConfig(),
                 history=HistoryConfig(path=Path(temp_dir) / "history.db"),
@@ -210,7 +210,7 @@ path = "state/history.db"
             dictionary_path = Path(temp_dir) / "dictionary.txt"
             dictionary_path.write_text("IBus\nibus-voice\n", encoding="utf-8")
             config = AppConfig(
-                provider=ProviderConfig(name="listenhub", model="sensevoice", dictionary_path=dictionary_path),
+                provider=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b", dictionary_path=dictionary_path),
                 audio=AudioConfig(),
                 hotkey=HotkeyConfig(),
                 history=HistoryConfig(path=Path(temp_dir) / "history.db"),
@@ -231,7 +231,7 @@ path = "state/history.db"
             provider_dictionary_path = Path(temp_dir) / "provider.txt"
             correction_dictionary_path = Path(temp_dir) / "correction.txt"
             config = AppConfig(
-                provider=ProviderConfig(name="listenhub", model="sensevoice", dictionary_path=provider_dictionary_path),
+                provider=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b", dictionary_path=provider_dictionary_path),
                 audio=AudioConfig(),
                 hotkey=HotkeyConfig(),
                 history=HistoryConfig(path=Path(temp_dir) / "history.db"),
@@ -257,7 +257,7 @@ path = "state/history.db"
 
     def test_add_word_fails_for_blank_word(self) -> None:
         config = AppConfig(
-            provider=ProviderConfig(name="listenhub", model="sensevoice", dictionary_path=Path("/tmp/dictionary.txt")),
+            provider=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b", dictionary_path=Path("/tmp/dictionary.txt")),
             audio=AudioConfig(),
             hotkey=HotkeyConfig(),
             history=HistoryConfig(path=Path("/tmp/history.db")),

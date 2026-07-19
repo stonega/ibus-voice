@@ -14,7 +14,7 @@ class ParseConfigTests(unittest.TestCase):
 
         self.assertEqual(config.provider.name, "listenhub")
         self.assertEqual(config.provider.api_key, "")
-        self.assertEqual(config.provider.model, "sensevoice")
+        self.assertEqual(config.provider.model, "qwen3-asr-0.6b")
         self.assertEqual(
             config.provider.dictionary_path,
             Path("/tmp/ibus-voice-config/dictionary.txt").resolve(),
@@ -85,13 +85,26 @@ class ParseConfigTests(unittest.TestCase):
 
         self.assertEqual(config.provider.name, "listenhub")
         self.assertEqual(config.provider.api_key, "")
-        self.assertEqual(config.provider.model, "sensevoice")
+        self.assertEqual(config.provider.model, "qwen3-asr-0.6b")
         self.assertEqual(
             config.provider.dictionary_path,
             Path("/tmp/ibus-voice-config/dictionary.txt").resolve(),
         )
 
-    def test_parse_listenhub_provider_rejects_non_sensevoice_model(self) -> None:
+    def test_parse_listenhub_provider_migrates_legacy_sensevoice_model(self) -> None:
+        config = parse_config(
+            {
+                "provider": {
+                    "name": "listenhub",
+                    "model": "sensevoice",
+                },
+            },
+            base_dir=Path("/tmp/ibus-voice-config"),
+        )
+
+        self.assertEqual(config.provider.model, "qwen3-asr-0.6b")
+
+    def test_parse_listenhub_provider_rejects_non_qwen_model(self) -> None:
         with self.assertRaises(ValueError) as ctx:
             parse_config(
                 {
@@ -103,7 +116,7 @@ class ParseConfigTests(unittest.TestCase):
                 base_dir=Path("/tmp/ibus-voice-config"),
             )
 
-        self.assertIn('provider.model for listenhub must be "sensevoice"', str(ctx.exception))
+        self.assertIn('provider.model for listenhub must be "qwen3-asr-0.6b"', str(ctx.exception))
 
     def test_parse_correction_config_with_relative_paths(self) -> None:
         config = parse_config(
@@ -236,7 +249,7 @@ class ParseConfigTests(unittest.TestCase):
             self.assertTrue(config_path.exists())
             self.assertEqual(config_path.read_text(encoding="utf-8"), DEFAULT_CONFIG_TEXT)
             self.assertEqual(config.provider.name, "listenhub")
-            self.assertEqual(config.provider.model, "sensevoice")
+            self.assertEqual(config.provider.model, "qwen3-asr-0.6b")
             self.assertEqual(
                 config.history.path,
                 (config_path.parent / "history.db").resolve(),

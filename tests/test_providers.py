@@ -70,12 +70,12 @@ class StubFallbackProvider:
 class ProviderTests(unittest.TestCase):
     def test_ensure_local_provider_ready_returns_runtime_status(self) -> None:
         with patch("ibus_voice.providers.listenhub.runtime_status", return_value="auto-download"):
-            self.assertEqual(ensure_local_provider_ready("sensevoice"), "auto-download")
+            self.assertEqual(ensure_local_provider_ready("qwen3-asr-0.6b"), "auto-download")
 
     def test_ensure_local_provider_ready_wraps_runtime_errors(self) -> None:
         with patch("ibus_voice.providers.listenhub.runtime_status", side_effect=LocalAsrError("boom")):
             with self.assertRaises(ProviderFailure) as ctx:
-                ensure_local_provider_ready("sensevoice")
+                ensure_local_provider_ready("qwen3-asr-0.6b")
 
         self.assertIn("boom", str(ctx.exception))
 
@@ -135,7 +135,7 @@ class ProviderTests(unittest.TestCase):
                 endpoint="http://127.0.0.1:8000/v1/audio/transcriptions",
             ),
             transport=FakeTransport({"text": " hello "}),
-            fallback_provider=ListenHubProvider.from_config(ProviderConfig(name="listenhub", model="sensevoice")),
+            fallback_provider=ListenHubProvider.from_config(ProviderConfig(name="listenhub", model="qwen3-asr-0.6b")),
         )
 
         result = provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
@@ -153,7 +153,7 @@ class ProviderTests(unittest.TestCase):
             TranscriptResult(
                 text="local transcript",
                 provider="listenhub",
-                metadata={"engine": "local-sensevoice"},
+                metadata={"engine": "local-qwen3-asr"},
             )
         )
         provider = OpenAITranscriptionsProvider(
@@ -173,7 +173,7 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(result.provider, "openai_transcriptions")
         self.assertTrue(result.metadata["fallback_used"])
         self.assertEqual(result.metadata["fallback_provider"], "listenhub")
-        self.assertEqual(result.metadata["engine"], "local-sensevoice")
+        self.assertEqual(result.metadata["engine"], "local-qwen3-asr")
 
     def test_openai_transcriptions_does_not_fall_back_on_http_error(self) -> None:
         fallback_provider = StubFallbackProvider(
@@ -254,24 +254,52 @@ class ProviderTests(unittest.TestCase):
         self.assertIn("audio_not_processed", str(ctx.exception))
 
     def test_listenhub_uses_local_asr(self) -> None:
-        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="sensevoice"))
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b"))
 
         with patch("ibus_voice.providers.listenhub.transcribe_wav_file_with_timeout", return_value=" transcript "):
             result = provider.transcribe(AudioPayload(data=b"audio", mime_type="audio/wav", filename="speech.wav"))
 
         self.assertEqual(result.text, "transcript")
         self.assertEqual(result.provider, "listenhub")
-        self.assertEqual(result.metadata["engine"], "local-sensevoice")
-        self.assertEqual(result.metadata["model"], "sensevoice")
+        self.assertEqual(result.metadata["engine"], "local-qwen3-asr")
+        self.assertEqual(result.metadata["model"], "qwen3-asr-0.6b")
+
+    def test_listenhub_from_config_migrates_legacy_model_name(self) -> None:
+        provider = ListenHubProvider.from_config(
+            ProviderConfig(name="listenhub", model="sensevoice")
+        )
+
+        self.assertEqual(provider.config.model, "qwen3-asr-0.6b")
 
     def test_listenhub_readiness_status_reports_runtime_state(self) -> None:
-        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="sensevoice"))
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b"))
 
         with patch("ibus_voice.providers.listenhub.ensure_local_provider_ready", return_value="auto-download"):
             self.assertEqual(provider.readiness_status(), "auto-download")
 
+    def test_listenhub_initializes_local_asr(self) -> None:
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b"))
+
+        with patch("ibus_voice.providers.listenhub.initialize_local_asr") as initialize_local_asr:
+            provider.initialize()
+
+        initialize_local_asr.assert_called_once_with("qwen3-asr-0.6b")
+
+    def test_listenhub_wraps_local_initialization_failure(self) -> None:
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b"))
+
+        with patch(
+            "ibus_voice.providers.listenhub.initialize_local_asr",
+            side_effect=LocalAsrError("download failed"),
+        ):
+            with self.assertRaises(ProviderFailure) as ctx:
+                provider.initialize()
+
+        self.assertTrue(ctx.exception.retryable)
+        self.assertIn("download failed", str(ctx.exception))
+
     def test_listenhub_wraps_local_runtime_failure(self) -> None:
-        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="sensevoice"))
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b"))
 
         with patch(
             "ibus_voice.providers.listenhub.transcribe_wav_file_with_timeout",
@@ -283,7 +311,7 @@ class ProviderTests(unittest.TestCase):
         self.assertIn("install failed", str(ctx.exception))
 
     def test_listenhub_returns_empty_transcript_failure(self) -> None:
-        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="sensevoice"))
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b"))
 
         with patch("ibus_voice.providers.listenhub.transcribe_wav_file_with_timeout", return_value=""):
             with self.assertRaises(ProviderFailure) as ctx:
@@ -292,7 +320,7 @@ class ProviderTests(unittest.TestCase):
         self.assertIn("empty transcript", str(ctx.exception))
 
     def test_listenhub_finish_stream_reuses_pcm_buffer_for_final_decode(self) -> None:
-        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="sensevoice"))
+        provider = ListenHubProvider(config=ProviderConfig(name="listenhub", model="qwen3-asr-0.6b"))
         audio_config = AudioConfig(sample_rate=16000, channels=2, sample_width=2)
         partials: list[str] = []
         session = provider.start_stream(audio_config, partials.append)
@@ -309,14 +337,14 @@ class ProviderTests(unittest.TestCase):
         pcm_decode.assert_called_once_with(
             b"\x00\x40\x00\x20\x00\x20\x00\x10",
             16000,
-            "sensevoice",
+            "qwen3-asr-0.6b",
             channels=2,
             sample_width=2,
         )
         self.assertEqual(result.text, "final transcript")
 
     def test_provider_factory_builds_listenhub(self) -> None:
-        provider = build_provider(ProviderConfig(name="listenhub", model="sensevoice"))
+        provider = build_provider(ProviderConfig(name="listenhub", model="qwen3-asr-0.6b"))
 
         self.assertIsInstance(provider, ListenHubProvider)
 
