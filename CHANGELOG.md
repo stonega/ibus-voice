@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.7.0 - 2026-07-19
+
 - replaced the built-in SenseVoice model with Qwen3-ASR 0.6B INT8 for broad Chinese, English, and mixed-language local dictation support
 - added verified first-use model installation using the upstream SHA-256 digest and complete Qwen model-file validation
 - cached and serialized the local Qwen recognizer so streaming partials and final transcription reuse one model instance
