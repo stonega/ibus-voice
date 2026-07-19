@@ -45,7 +45,7 @@ python3 -m pip install -e '.[runtime,local]'
 If `--check` says `install the Python package 'sherpa-onnx'` even though you already installed it, install it into the same interpreter that runs `ibus-voice`. The packaged launchers use `/usr/bin/python3`:
 
 ```bash
-/usr/bin/python3 -m pip install sherpa-onnx
+/usr/bin/python3 -m pip install --upgrade 'sherpa-onnx>=1.12.36'
 ```
 
 Packaged installs also include an offline `sherpa-onnx` wheel bundle. If the vendored runtime does not match the target machine's Python minor version, `ibus-voice` will try to reinstall the matching wheel into `~/.local/share/ibus-voice/runtime/` on first local-provider use.
@@ -65,4 +65,4 @@ With correction disabled, `ibus-voice` commits the raw speech-to-text result.
 
 With correction enabled, it sends the transcript to an OpenAI-compatible text model and commits the corrected result. If that second step fails, the raw transcript is still committed.
 
-With `provider.name = "listenhub"`, `--check` validates that the local Python ASR runtime is available and reports whether the SenseVoice model is already installed or will auto-download on first use.
+With `provider.name = "listenhub"`, `--check` validates that the local Python ASR runtime supports Qwen3-ASR and reports whether the Qwen3-ASR 0.6B INT8 model is installed or will auto-download on first use. The verified archive is about 879 MB. When setup is needed, it runs in the background and desktop notifications report when it starts and finishes. Transcription runs offline after installation.

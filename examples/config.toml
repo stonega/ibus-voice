@@ -1,6 +1,6 @@
 [provider]
 name = "listenhub"
-model = "sensevoice"
+model = "qwen3-asr-0.6b"
 timeout_seconds = 30
 dictionary_path = "dictionary.txt"
 

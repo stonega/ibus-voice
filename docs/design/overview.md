@@ -6,12 +6,13 @@
 
 ## Core Flow
 
-1. Capture microphone audio
-2. Send audio to a speech-to-text backend
-3. Optionally run a text correction step on the final transcript
-4. Receive partial or final recognition results
-5. Convert results into preedit or committed text
-6. Deliver text to the focused application through IBus
+1. Prepare the selected local speech backend in the background when needed
+2. Capture microphone audio
+3. Send audio to a speech-to-text backend
+4. Optionally run a text correction step on the final transcript
+5. Receive partial or final recognition results
+6. Convert results into preedit or committed text
+7. Deliver text to the focused application through IBus
 
 ## Main Components
 
@@ -27,6 +28,7 @@
 - reliable Linux desktop integration
 - support for local or remote backends
 - clear separation between IBus logic and speech backend logic
+- non-blocking first-run setup with desktop notification feedback
 
 ## Open Questions
 

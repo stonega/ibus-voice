@@ -5,12 +5,14 @@ from pathlib import Path
 import os
 import tomllib
 
+from ibus_voice.local_asr import LocalAsrError, MODEL_NAME as DEFAULT_LOCAL_MODEL, normalize_model_name
+
 
 DEFAULT_CONFIG_PATH = Path.home() / ".config" / "ibus-voice" / "config.toml"
 DEFAULT_CONFIG_DIR = DEFAULT_CONFIG_PATH.parent
 DEFAULT_CONFIG_TEXT = """[provider]
 name = "listenhub"
-model = "sensevoice"
+model = "qwen3-asr-0.6b"
 timeout_seconds = 30
 dictionary_path = "dictionary.txt"
 
@@ -203,9 +205,12 @@ def _parse_provider_config(raw: object, *, base_dir: Path) -> ProviderConfig:
         if not endpoint:
             raise ValueError("provider.endpoint is required for openai_transcriptions")
     elif normalized_name == "listenhub":
-        model = model or "sensevoice"
-        if model != "sensevoice":
-            raise ValueError('provider.model for listenhub must be "sensevoice"')
+        try:
+            model = normalize_model_name(model or DEFAULT_LOCAL_MODEL)
+        except LocalAsrError as exc:
+            raise ValueError(
+                f'provider.model for listenhub must be "{DEFAULT_LOCAL_MODEL}"'
+            ) from exc
     elif not model:
         raise ValueError("provider.model is required")
 

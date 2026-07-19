@@ -34,7 +34,7 @@ runtime = [
   "PyAudio>=0.2.14",
 ]
 local = [
-  "sherpa-onnx>=1.12.0",
+  "sherpa-onnx>=1.12.36",
 ]
 
 [project.scripts]

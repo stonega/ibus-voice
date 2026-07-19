@@ -7,14 +7,12 @@ from urllib.error import URLError
 
 from ibus_voice.audio import AudioPayload
 from ibus_voice.config import ProviderConfig
+from ibus_voice.local_asr import MODEL_NAME as DEFAULT_FALLBACK_MODEL
 from ibus_voice.providers.base import validate_transcript_text
 from ibus_voice.providers.http import HttpTransport, UrllibTransport
 from ibus_voice.providers.listenhub import ListenHubProvider
 from ibus_voice.providers.openai import _build_transcription_prompt
 from ibus_voice.types import ProviderFailure, TranscriptResult
-
-
-DEFAULT_FALLBACK_MODEL = "sensevoice"
 
 
 @dataclass(slots=True)

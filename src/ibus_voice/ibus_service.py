@@ -15,13 +15,13 @@ from ibus_voice.metadata import (
     TEXTDOMAIN,
     VERSION,
 )
+from ibus_voice.provider_initialization import ProviderInitializer
 
 
 LOGGER = logging.getLogger(__name__)
 
 LISTENING_ICON = "🎙"
 LISTENING_LABEL = "Listening"
-INITIALIZING_LABEL = "Initing"
 # Keep the auxiliary text at a stable width from the first frame so IBus
 # panels do not clip later frames after measuring the initial shortest label.
 LISTENING_DOT_FRAMES = ("...", ".. ", ".  ")
@@ -103,23 +103,6 @@ def _listening_status_text(frame: int) -> str:
     return f"{LISTENING_ICON} {LISTENING_LABEL}{dots}"
 
 
-def _initializing_status_text() -> str:
-    return f"{LISTENING_ICON} {INITIALIZING_LABEL}..."
-
-
-def _provider_status_text(provider: object) -> str | None:
-    readiness_status = getattr(provider, "readiness_status", None)
-    if not callable(readiness_status):
-        return None
-    try:
-        status = readiness_status()
-    except Exception:
-        return None
-    if status == "auto-download":
-        return _initializing_status_text()
-    return None
-
-
 def _remove_glib_source(source_id: int) -> None:
     if GLib is None:
         return
@@ -176,7 +159,14 @@ class HotkeyMatcher:
 
 if IBus is not None:  # pragma: no branch
     class VoiceIBusEngine(IBus.Engine):  # pragma: no cover - hard to instantiate in isolated tests
-        def __init__(self, bus, object_path: str, voice_engine: VoiceEngine, matcher: HotkeyMatcher):
+        def __init__(
+            self,
+            bus,
+            object_path: str,
+            voice_engine: VoiceEngine,
+            matcher: HotkeyMatcher,
+            provider_initializer: ProviderInitializer,
+        ):
             super().__init__(
                 connection=bus.get_connection(),
                 object_path=object_path,
@@ -184,31 +174,40 @@ if IBus is not None:  # pragma: no branch
             )
             self._voice_engine = voice_engine
             self._matcher = matcher
+            self._provider_initializer = provider_initializer
+            self._initialization_blocked_hotkey = False
             self._listening_status_frame = 0
             self._listening_status_source_id: int | None = None
             committer = self._voice_engine.committer
             if isinstance(committer, TextCommitter):
                 committer.engine = self
+            self._provider_initializer.start()
 
         def do_focus_out(self) -> None:
             if self._voice_engine.state == "recording":
                 self._voice_engine.handle_release()
             self._stop_listening_animation()
+            self._initialization_blocked_hotkey = False
             _hide_auxiliary_status(self)
             super().do_focus_out()
 
         def do_process_key_event(self, keyval: int, keycode: int, state: int) -> bool:
             del keycode
             if self._matcher.matches(keyval, state, released=False):
+                if not self._provider_initializer.ready:
+                    self._provider_initializer.start()
+                    if not self._provider_initializer.ready:
+                        self._initialization_blocked_hotkey = True
+                        return True
                 self._voice_engine.handle_press()
                 if self._voice_engine.state == "recording":
                     self._start_listening_animation()
                 return True
+            if self._initialization_blocked_hotkey and self._matcher.matches_release(keyval, state):
+                self._initialization_blocked_hotkey = False
+                return True
             if self._voice_engine.state == "recording" and self._matcher.matches_release(keyval, state):
                 self._stop_listening_animation()
-                provider_status_text = _provider_status_text(self._voice_engine.provider)
-                if provider_status_text is not None:
-                    _set_auxiliary_status(self, provider_status_text, visible=True)
                 self._voice_engine.handle_release()
                 if self._voice_engine.last_error:
                     _set_auxiliary_status(self, f"Voice input failed: {self._voice_engine.last_error}", visible=True)
@@ -246,11 +245,18 @@ if IBus is not None:  # pragma: no branch
     class VoiceEngineFactory(IBus.Factory):  # pragma: no cover - depends on live IBus
         ENGINE_PATH = "/org/freedesktop/IBus/Engine/ibus_voice"
 
-        def __init__(self, bus, engine_builder: Callable[[], VoiceEngine], matcher: HotkeyMatcher):
+        def __init__(
+            self,
+            bus,
+            engine_builder: Callable[[], VoiceEngine],
+            matcher: HotkeyMatcher,
+            provider_initializer: ProviderInitializer,
+        ):
             super().__init__(connection=bus.get_connection(), object_path=IBus.PATH_FACTORY)
             self._bus = bus
             self._engine_builder = engine_builder
             self._matcher = matcher
+            self._provider_initializer = provider_initializer
             self._engine_id = 0
 
         def do_create_engine(self, engine_name: str):
@@ -263,6 +269,7 @@ if IBus is not None:  # pragma: no branch
                 object_path=object_path,
                 voice_engine=self._engine_builder(),
                 matcher=self._matcher,
+                provider_initializer=self._provider_initializer,
             )
 
 
@@ -306,8 +313,14 @@ class IBusVoiceService:
             key=self.config.hotkey.key,
             modifiers=self.config.hotkey.modifiers,
         )
+        self._provider_initializer = ProviderInitializer(self.voice_engine.provider)
         self._mainloop = GLib.MainLoop()
-        self._factory = VoiceEngineFactory(bus, self._build_engine, matcher)
+        self._factory = VoiceEngineFactory(
+            bus,
+            self._build_engine,
+            matcher,
+            self._provider_initializer,
+        )
         if "--ibus" in __import__("sys").argv:
             bus.request_name(COMPONENT_NAME, 0)
         else:

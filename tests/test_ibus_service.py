@@ -4,12 +4,10 @@ import unittest
 from unittest.mock import Mock
 
 from ibus_voice.ibus_service import (
-    TextCommitter,
     HotkeyMatcher,
+    TextCommitter,
     _hide_auxiliary_status,
-    _initializing_status_text,
     _listening_status_text,
-    _provider_status_text,
 )
 
 
@@ -84,21 +82,6 @@ class AuxiliaryStatusTests(unittest.TestCase):
         self.assertEqual(_listening_status_text(1), "🎙 Listening.. ")
         self.assertEqual(_listening_status_text(2), "🎙 Listening.  ")
         self.assertEqual(_listening_status_text(3), "🎙 Listening...")
-
-    def test_initializing_status_text_uses_initing_label(self) -> None:
-        self.assertEqual(_initializing_status_text(), "🎙 Initing...")
-
-    def test_provider_status_text_maps_auto_download_to_initing(self) -> None:
-        provider = Mock()
-        provider.readiness_status.return_value = "auto-download"
-
-        self.assertEqual(_provider_status_text(provider), "🎙 Initing...")
-
-    def test_provider_status_text_ignores_other_statuses(self) -> None:
-        provider = Mock()
-        provider.readiness_status.return_value = "installed"
-
-        self.assertIsNone(_provider_status_text(provider))
 
     def test_text_committer_queues_preedit_updates_on_glib_main_loop(self) -> None:
         engine = FakeEngine()

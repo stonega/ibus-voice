@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- replaced the built-in SenseVoice model with Qwen3-ASR 0.6B INT8 for broad Chinese, English, and mixed-language local dictation support
+- added verified first-use model installation using the upstream SHA-256 digest and complete Qwen model-file validation
+- cached and serialized the local Qwen recognizer so streaming partials and final transcription reuse one model instance
+- raised the local runtime requirement to `sherpa-onnx >= 1.12.36` and added an explicit compatibility check
+- kept existing `model = "sensevoice"` configs working by normalizing them to `qwen3-asr-0.6b`
+- moved first-use local model setup off the IBus event thread and replaced the `🎙 Initing...` auxiliary status with desktop notifications for setup start, success, and failure
+
 ## 0.6.1 - 2026-04-05
 
 - added streaming preedit updates for the local ListenHub provider so partial recognition can appear in the active input field while the user is still speaking

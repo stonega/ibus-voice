@@ -7,10 +7,11 @@ import sys
 
 from ibus_voice.audio import PyAudioRecorder
 from ibus_voice.correction import build_corrector
-from ibus_voice.config import load_config, load_history_path
+from ibus_voice.config import AppConfig, load_config, load_history_path
 from ibus_voice.engine import VoiceEngine
 from ibus_voice.history import DEFAULT_HISTORY_PATH, SQLiteSessionHistory, format_completed_sessions
 from ibus_voice.ibus_service import IBusVoiceService, TextCommitter
+from ibus_voice.local_asr import MODEL_NAME as DEFAULT_LOCAL_MODEL
 from ibus_voice.metadata import render_engines_xml, render_version_text
 from ibus_voice.providers.listenhub import ensure_local_provider_ready
 from ibus_voice.providers import build_provider
@@ -71,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
         if provider_name == "listenhub":
             local_model = config.provider.model
         elif provider_name == "openai_transcriptions":
-            local_model = "sensevoice"
+            local_model = DEFAULT_LOCAL_MODEL
         if local_model is not None:
             try:
                 local_runtime = ensure_local_provider_ready(local_model)

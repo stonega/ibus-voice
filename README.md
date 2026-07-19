@@ -77,6 +77,8 @@ The installers and first run use `~/.config/ibus-voice/` as the default config d
 Tip: after changing `config.toml`, restart IBus before testing the new settings so the running `ibus-voice` engine reloads the updated config.
 Tip: `dictionary.txt` is currently not used by the `listenhub` provider. Dictionary biasing only applies to the remote providers and correction prompting.
 
+The built-in `listenhub` provider uses Qwen3-ASR 0.6B INT8 locally with `model = "qwen3-asr-0.6b"`. It supports Chinese, English, and mixed-language dictation. First use downloads and prepares a verified model archive of about 879 MB in the background, with desktop notifications when setup starts and finishes; later transcription is offline. Existing `model = "sensevoice"` configs are accepted and mapped to Qwen automatically.
+
 See `docs/user/configuration.md` for the full configuration reference.
 
 Example self-hosted OpenAI-compatible transcription config:
